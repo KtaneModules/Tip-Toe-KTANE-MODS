@@ -9,8 +9,35 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 34a4fefeeafb9a5439cfbd83306ba467, type: 3}
-  m_Name: Default
+  m_Name: Ports
   m_EditorClassIdentifier: 
   SerialNumberType: 0
   CustomSerialNumber: 
-  Widgets: []
+  TwoFactorResetTime: 30
+  Widgets:
+  - Type: 1
+    Count: 1
+    PortPlateType: 0
+    DVIPort: 1
+    ParallelPort: 1
+    PS2Port: 1
+    RJ45Port: 1
+    SerialPort: 1
+    StereoRCAPort: 1
+    ComponentVideoPort: 0
+    CompositeVideoPort: 0
+    HDMIPort: 0
+    VGAPort: 0
+    USBPort: 0
+    ACPort: 0
+    PCMCIAPort: 0
+    CustomPorts: []
+    BatteryType: 1
+    BatteryCount: 0
+    MinBatteries: 0
+    MaxBatteries: 0
+    IndicatorLabel: 0
+    CustomLabel: 
+    IndicatorState: 0
+    CustomQueryKey: 
+    CustomData: 

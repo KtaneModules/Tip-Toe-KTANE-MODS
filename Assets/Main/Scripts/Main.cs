@@ -71,10 +71,12 @@ public class Main : MonoBehaviour
 
 
 		serialNumber = Bomb.GetSerialNumber().ToUpper();
-		serialNumberDigits = Bomb.GetSerialNumberNumbers().ToList();
+		serialNumberDigits = Bomb.GetSerialNumberNumbers().OrderBy(x => x).ToList();
+
 		serialNumberLetters = Bomb.GetSerialNumberLetters().ToList();
 
-		indicators = Bomb.GetIndicators().ToList();
+		indicators = Bomb.GetIndicators().OrderBy(x => x).ToList();
+
 		litIndicators = Bomb.GetOnIndicators().ToList();
 		unlitIndicators = Bomb.GetOffIndicators().ToList();
 
@@ -94,13 +96,6 @@ public class Main : MonoBehaviour
 	{
 		GetEdgework();
 
-		Debug.Log("PS num " + psPortNum);
-		Debug.Log("rca num " + rcaPortNum);
-		Debug.Log("dvid num " + dviPortNum);
-		Debug.Log("rj num " + rjPortNum);
-		Debug.Log("parallel num " + parallelPortNum);
-		Debug.Log("serial num " + serialPortNum);
-
 		SetSafeRow1(); //9
 		SetConditionTrue(8); //8
 		SetSafeRow3(); //7
@@ -116,12 +111,12 @@ public class Main : MonoBehaviour
 		string log = "";
 		for (int i = 0; i < 10; i++)
         {
+			log += "\n";
+
 			for (int j = 0; j < 10; j++)
 			{
 				log += Grid[i, j].Condition ? "T " : "F ";
 			}
-
-			log += "\n";
 		}
 
 		Logging(log);
@@ -263,8 +258,8 @@ public class Main : MonoBehaviour
 						foreach (int num in serialNumberDigits)
                         {
 							Grid[5, GetIndex(num)].Condition = true;
-							row6List.Add(new KeyValuePair<string, HighLow>(kv.Key, new HighLow());
 						}
+						row6List.Add(new KeyValuePair<string, HighLow>(kv.Key, new HighLow(serialNumberDigits.Last(), serialNumberDigits.First())));
 						break;
 
 					case "RCA":
@@ -297,8 +292,6 @@ public class Main : MonoBehaviour
 
 	void SetSafeRow6()
 	{
-		indicators = indicators.OrderBy(x => x).ToList();
-
 		string firstIndicator = indicators.Count == 0 ? "NONE" : indicators[0];
 
 		foreach (KeyValuePair<string, HighLow> kv in row6List)
