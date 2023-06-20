@@ -152,10 +152,6 @@ public class Main : MonoBehaviour
 
 		}
 
-		Cell cell = flickeringCells[0];
-		Debug.Log($"Flickering at ({cell.Row},{cell.Col})");
-		Debug.Log($"Time1 at {cell.FlickerTime1}");
-		Debug.Log($"Time2 at {cell.FlickerTime2}");
 	}
 
 	private void PrintGrid(bool before)
@@ -178,7 +174,7 @@ public class Main : MonoBehaviour
 
 		if (before)
         {
-			string g2 = "FFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFFFF\nFFFFFFTTTF\nTFTFFTTTTF\nTTTTTTTTTT\nFFTTTTFTFF\nTTTTTTTTTT\nFTFFFTFFTF";
+			string g2 = "FFFFFFFFFF\nFFFFFFFFFF\nTTTTTTTTTT\nFFFFFFFFFF\nFFFFFFTTTF\nTFTFFTTTTF\nTTTTTTTTTT\nFFTTTTFTFF\nTTTTTTTTTT\nFTFFFTFFTF";
 			SameGrid(g1, g2);
 		}
 	}
@@ -205,6 +201,11 @@ public class Main : MonoBehaviour
 
 	void Update()
 	{
+		if (ModuleSolved)
+		{
+			return;
+		}
+
 		int minutes = (int)Bomb.GetTime() / 60;
 		int seconds = (int)Bomb.GetTime() % 60;
 		
@@ -544,6 +545,11 @@ public class Main : MonoBehaviour
 
 	void KeypadPress(KMSelectable s)
 	{
+		s.AddInteractionPunch(.5f);
+		if (ModuleSolved)
+        {
+			return;
+        }
 		Cell c = GetCell(s);
 
 		string log = $"Pressed ({(c.Row + 1) % 10},{(c.Col + 1) % 10}).";
@@ -551,7 +557,7 @@ public class Main : MonoBehaviour
 		//if player is not set, check to see if cell pressed is in the first row
 		if (currentPos.Row == -1 && currentPos.Col == -1)
         {
-			if (c.Row != 0)
+			if (c.Row != 9)
 			{
 				log += " This is not in the first row. Strike!";
 				Logging(log);
@@ -603,6 +609,13 @@ public class Main : MonoBehaviour
 			
 			PrintGrid(false);
 		}
+
+		//current cell is in 10th row solve module
+		if (c.Row == 0)
+        {
+			Solve();
+		}
+
 	}
 
 	IEnumerator Flicker(Cell c)
@@ -632,6 +645,12 @@ public class Main : MonoBehaviour
 		ResetModule();
 	}
 
+	void Solve()
+    {
+		GetComponent<KMBombModule>().HandlePass();
+		ModuleSolved = true;
+    }
+
 	int GetIndex(int num)
 	{
 		int col = num - 1;
@@ -643,6 +662,7 @@ public class Main : MonoBehaviour
 
 		return col;
 	}
+
 
 
 	void SetConditionTrue(int row)
