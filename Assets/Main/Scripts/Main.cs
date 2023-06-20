@@ -99,6 +99,7 @@ public class Main : MonoBehaviour
 	void Start()
 	{
 		startingMinutes = (int)Bomb.GetTime() / 60 - 1;
+		Debug.Log("Starting min: " + startingMinutes);
 		GetEdgework();
 
 		ResetModule();
@@ -207,7 +208,7 @@ public class Main : MonoBehaviour
 		int minutes = (int)Bomb.GetTime() / 60;
 		int seconds = (int)Bomb.GetTime() % 60;
 		
-		if (minutes > startingMinutes)
+		if (minutes >= startingMinutes)
         {
 			return;
         }
