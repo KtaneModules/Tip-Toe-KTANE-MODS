@@ -14,8 +14,6 @@ public class Main : MonoBehaviour
 	[SerializeField]
 	KMAudio Audio;
 
-	[SerializeField]
-	Material orange;
 
 	[SerializeField]
 	Material white;
@@ -56,7 +54,7 @@ public class Main : MonoBehaviour
 
 	static int ModuleIdCounter = 1;
 	int ModuleId;
-	private bool ModuleSolved;
+	private bool ModuleSolved = false;
 	int startingMinutes;
 	int currentMinutes = -1;
 	void Awake()
@@ -99,7 +97,6 @@ public class Main : MonoBehaviour
 	void Start()
 	{
 		startingMinutes = (int)Bomb.GetTime() / 60 - 1;
-		Debug.Log("Starting min: " + startingMinutes);
 		GetEdgework();
 
 		ResetModule();
@@ -118,10 +115,10 @@ public class Main : MonoBehaviour
 		{
 			int row = i / 10;
 			int col = i % 10;
-			Grid[row, col] = new Cell(row, col, buttons[i], white, orange);
+			Grid[row, col] = new Cell(row, col, buttons[i], white);
 		}
 		flickeringCells = new List<Cell>();
-		currentPos = new Cell(-1, -1, null, null, null);
+		currentPos = new Cell(-1, -1, null, null);
 		row6CellSafe = false;
 		SetSafeRow1(); //9
 		SetConditionTrue(8); //8
@@ -143,14 +140,20 @@ public class Main : MonoBehaviour
 
 		foreach (Cell c in flickeringCells)
         {
-
 			do
 			{
-				c.FlickerTime1 = SetFlickeringTime(true);
-				c.FlickerTime2 = SetFlickeringTime(false);
-			} while (Math.Abs(c.FlickerTime1 - c.FlickerTime2) < 2);
+				for (int i = 0; i < c.AlreadyFlickered.Length; i++)
+                {
+					c.FlickerTimes[i] = SetFlickeringTime(i);
+                }
 
+			} while (c.FlickerTimes.Distinct().Count() != c.FlickerTimes.Count());
 		}
+
+		Cell cell = flickeringCells[0];
+
+		//Debug.Log($"Flickering at {cell.Row},{cell.Col}");
+		//Debug.Log($"Times at {string.Join(" ", cell.FlickerTimes.Select(x => "" + x).ToArray())}");
 
 	}
 
@@ -184,7 +187,7 @@ public class Main : MonoBehaviour
 	{
 		string[] g2 = temp.Split('\n');
 
-		for (int i = 0; i < 10; i++)
+		for (int i = 2; i < 10; i++)
         {
 			for (int j = 0; j < 10; j++)
             {
@@ -208,8 +211,8 @@ public class Main : MonoBehaviour
 
 		int minutes = (int)Bomb.GetTime() / 60;
 		int seconds = (int)Bomb.GetTime() % 60;
-		
-		if (minutes >= startingMinutes)
+
+		if (minutes > startingMinutes)
         {
 			return;
         }
@@ -219,23 +222,22 @@ public class Main : MonoBehaviour
 			currentMinutes = minutes; 
 			foreach (Cell c in flickeringCells)
             {
-				c.AlreadyFlickered1 = false;
-				c.AlreadyFlickered2 = false;
+				for (int i = 0; i < c.AlreadyFlickered.Length; i++)
+                {
+					c.AlreadyFlickered[i] = false;
+                }
 			}
 		}
 
 		foreach (Cell c in flickeringCells)
         {
-			if (!c.AlreadyFlickered1 && c.FlickerTime1 == seconds)
-            {
-				StartCoroutine(Flicker(c));
-				c.AlreadyFlickered1 = true;
-            }
-
-			else if (!c.AlreadyFlickered2 && c.FlickerTime2 == seconds)
+			for (int i = 0; i < c.AlreadyFlickered.Length; i++)
 			{
-				StartCoroutine(Flicker(c));
-				c.AlreadyFlickered2 = true;
+				if (!c.AlreadyFlickered[i] && c.FlickerTimes[i] == seconds)
+                {
+					StartCoroutine(Flicker(c));
+					c.AlreadyFlickered[i] = true;
+				}
 			}
 		}
 	}
@@ -395,28 +397,10 @@ public class Main : MonoBehaviour
 						low = 1;
 						break;
 				}
-
-				Debug.Log("Port " + s);
-				//Debug.Log("High " + high);
-				//Debug.Log("Low " + low);
 				Grid[5, high].Safe = Grid[5, low].Safe = true;
 				row6List.Add(new KeyValuePair<string, HighLow>(s, new HighLow(high, low)));
 			}
 		}
-
-
-		//if (list.Count == 0)
-        //{
-		//	Debug.Log("Row 5 list is empty");
-        //}
-		//
-		//else
-        //{
-		//	foreach (string s in list)
-		//	{
-		//		Debug.Log(s);
-		//	}
-		//}
 	}
 
 	void SetSafeRow6()
@@ -538,9 +522,26 @@ public class Main : MonoBehaviour
 		}
 	}
 
-	int SetFlickeringTime(bool before29)
+	int SetFlickeringTime(int range)
 	{
-		return before29 ? Rnd.Range(30, 60) : Rnd.Range(1, 29);
+		int num;
+		switch (range)
+		{
+			case 0:
+				num = Rnd.Range(0, 15);
+				break;
+			case 1:
+				num = Rnd.Range(15, 30);
+				break;
+			case 2:
+				num = Rnd.Range(30, 45);
+				break;
+			default:
+				num = Rnd.Range(45, 60);
+				break;
+		}
+
+		return num;
 	}
 
 	void KeypadPress(KMSelectable s)
