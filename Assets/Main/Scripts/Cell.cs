@@ -50,7 +50,7 @@ public class Cell {
             Up == c ||
             Left == c ||
             Down == c ||
-            Left == c;
+            Right == c;
     }
 
     public void SetWhite(bool t)
@@ -60,6 +60,6 @@ public class Cell {
 
     public override string ToString()
     {
-        return $"{Row} {Col}";
+        return $"({Row}, {Col})";
     }
 }

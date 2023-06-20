@@ -130,6 +130,7 @@ public class Main : MonoBehaviour
 				c.Right = j == 9 ? null : Grid[i, j + 1];
 			}
         }
+
 		flickeringCells = new List<Cell>();
 		currentPos = new Cell(-1, -1, null, null);
 		row6CellSafe = false;
@@ -566,7 +567,9 @@ public class Main : MonoBehaviour
         }
 		Cell c = GetCell(s);
 
-		string log = $"Pressed ({(c.Row + 1) % 10},{(c.Col + 1) % 10}).";
+		string log = $"Pressed {c}.";
+
+		//string log = $"Pressed ({(c.Row + 1) % 10},{(c.Col + 1) % 10}).";
 
 		//if player is not set, check to see if cell pressed is in the first row
 		if (currentPos.Row == -1 && currentPos.Col == -1)
@@ -803,26 +806,29 @@ public class Main : MonoBehaviour
 
 	List<Cell> FindPath(Cell start, Cell end)
     {
-		Debug.Log("This method is being seen");
 		SetHeristic(end);
 
 		List<Cell> open = new List<Cell>();
 		List<Cell> closed = new List<Cell>();
-		
-
 
 		start.G = 0;
 		
 		Cell currentCell = start;
 		closed.Add(start);
 
-
+		int count = 0;
 
 		while (!open.Contains(end)) //change to when end is reached
         {
-			Debug.Log("The while loop is being reached");
+			count++;
 
-			//Debug.Log("Current cell is " + currentCell.ToString());
+			if (count == 100)
+            {
+				Debug.Log("An infiinte loop has occured");
+				break;
+            }
+
+			Debug.Log("Current cell is " + currentCell.ToString());
 
 			List<Cell> neighbors = new List<Cell>();
 
@@ -831,13 +837,12 @@ public class Main : MonoBehaviour
 			neighbors.Add(currentCell.Down);
 			neighbors.Add(currentCell.Right);
 
-			for (int i = neighbors.Count - 1; i > 0; i--)
-            {
-				if (neighbors[i] == null || !neighbors[i].Safe)
-                {
-					neighbors.RemoveAt(i);
-                }
-            }
+
+			Debug.Log("BEFORE neighbors are " + string.Join(" ", neighbors.Select(x => x == null ? "poop" : x.ToString()).ToArray()));
+
+			neighbors = GetRidOfBadNeighbors(neighbors, closed);
+
+			Debug.Log("neighbors are " + string.Join(" ", neighbors.Select(x => x.ToString()).ToArray()));
 
 			foreach (Cell c in neighbors)
             {
@@ -861,8 +866,12 @@ public class Main : MonoBehaviour
 				}
             }
 
-			currentCell = open.OrderBy(x => x.FinalCost).ToList().Last();
+			open.Remove(currentCell);
 			closed.Add(currentCell);
+
+			currentCell = open.OrderBy(x => x.FinalCost).ToList().Last();
+			Debug.Log("Cells in open list " + string.Join(" ", open.Select(x => x.ToString()).ToArray()));
+			neighbors.Clear();
 		}
 	
 		if (!open.Contains(end))
@@ -882,6 +891,7 @@ public class Main : MonoBehaviour
 			current = current.Parent;
         }
 
+
 		return path;
 	}
 
@@ -895,5 +905,20 @@ public class Main : MonoBehaviour
 			c.G = 0;
         }
     }
+
+	List<Cell> GetRidOfBadNeighbors(List<Cell> list, List<Cell> closed)
+    {
+		List<Cell> newList = new List<Cell>();
+
+		foreach (Cell c in list)
+		{ 
+			if (c != null && !closed.Contains(c) && c.Safe)
+            {
+				newList.Add(c);
+            }
+		}
+		
+		return newList;
+	}
 
 }
