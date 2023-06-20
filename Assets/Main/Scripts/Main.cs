@@ -890,7 +890,7 @@ public class Main : MonoBehaviour
 			path.Add(current);
 			current = current.Parent;
         }
-
+		path.Reverse();
 
 		return path;
 	}
