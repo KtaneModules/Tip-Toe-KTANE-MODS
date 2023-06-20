@@ -13,7 +13,7 @@ public class Cell{
     public int Col { get; private set; }
     public KMSelectable Button { get; private set; }
 
-    private Material m;
+    private MeshRenderer m;
     Material white;
     Material orange;
 
@@ -26,9 +26,10 @@ public class Cell{
         this.white = white;
         this.orange = orange;
 
-        GameObject gameObject = button.gameObject;
-        MeshRenderer mesh = gameObject.GetComponent<MeshRenderer>();
-        m = mesh.material;
+        if (button != null)
+        {
+            m = Button.gameObject.GetComponent<MeshRenderer>();
+        }
     }
 
     public bool Adjacent(Cell c)
@@ -43,6 +44,6 @@ public class Cell{
 
     public void SetWhite(bool t)
     {
-        m = t ? white : orange;
+        m.material = t ? white : orange;
     }
 }

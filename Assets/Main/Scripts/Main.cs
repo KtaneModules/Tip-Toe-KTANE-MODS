@@ -154,7 +154,7 @@ public class Main : MonoBehaviour
 		Cell cell = flickeringCells[0];
 		Debug.Log($"Flickering at ({cell.Row},{cell.Col})");
 		Debug.Log($"Time1 at {cell.FlickerTime1}");
-		Debug.Log($"Time2 at {cell.FlickerTime1}");
+		Debug.Log($"Time2 at {cell.FlickerTime2}");
 	}
 
 	private void PrintGrid(bool before)
