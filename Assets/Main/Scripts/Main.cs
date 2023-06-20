@@ -14,6 +14,11 @@ public class Main : MonoBehaviour
 	[SerializeField]
 	KMAudio Audio;
 
+	[SerializeField]
+	Material orange;
+
+	[SerializeField]
+	Material white;
 	#region Edgework
 	int psPortNum;
 	int rcaPortNum;
@@ -41,25 +46,24 @@ public class Main : MonoBehaviour
 	KMSelectable[] buttons;
 	Cell[,] Grid;
 
+	Cell currentPos;
+
+	bool row6CellSafe;
+	List<int> row9Safe;
+
 	List<KeyValuePair<string, HighLow>> row6List;
+	List<Cell> flickeringCells;
 
 	static int ModuleIdCounter = 1;
 	int ModuleId;
 	private bool ModuleSolved;
-
+	int startingMinutes;
+	int currentMinutes = -1;
 	void Awake()
 	{
 		ModuleId = ModuleIdCounter++;
 		buttons = GetComponent<KMSelectable>().Children;
 		Grid = new Cell[10, 10];
-
-		for (int i = 0; i < 100; i++)
-		{
-			int row = i / 10;
-			int col = i % 10;
-			Grid[row, col] = new Cell(row, col, buttons[i]);
-
-		}
 	}
 
 	void GetEdgework()
@@ -94,40 +98,90 @@ public class Main : MonoBehaviour
 
 	void Start()
 	{
+		startingMinutes = (int)Bomb.GetTime() / 60 - 1;
 		GetEdgework();
 
+		ResetModule();
+
+		foreach (KMSelectable s in buttons)
+		{ 
+			s.OnInteract += delegate () { KeypadPress(s); return false; };
+		}
+
+		PrintGrid(true);
+	}
+
+	void ResetModule()
+	{
+		for (int i = 0; i < 100; i++)
+		{
+			int row = i / 10;
+			int col = i % 10;
+			Grid[row, col] = new Cell(row, col, buttons[i], white, orange);
+		}
+		flickeringCells = new List<Cell>();
+		currentPos = new Cell(-1, -1, null, null, null);
+		row6CellSafe = false;
 		SetSafeRow1(); //9
 		SetConditionTrue(8); //8
 		SetSafeRow3(); //7
 		SetConditionTrue(6); //6
 		SetSafeRow5(); //5
 		SetSafeRow6(); //4
+		SetConditionTrue(2); //2
+		SetSafeRow9(); //1
+		SetSafeRow10(); //0
 
-		PrintGrid();
+		foreach (Cell c in Grid)
+        {
+			if (c.Flicker)
+            {
+				flickeringCells.Add(c);
+            }
+        }
+
+		foreach (Cell c in flickeringCells)
+        {
+
+			do
+			{
+				c.FlickerTime1 = SetFlickeringTime(true);
+				c.FlickerTime2 = SetFlickeringTime(false);
+			} while (Math.Abs(c.FlickerTime1 - c.FlickerTime2) < 2);
+
+		}
+
+		Cell cell = flickeringCells[0];
+		Debug.Log($"Flickering at ({cell.Row},{cell.Col})");
+		Debug.Log($"Time1 at {cell.FlickerTime1}");
+		Debug.Log($"Time2 at {cell.FlickerTime1}");
 	}
 
-	private void PrintGrid()
+	private void PrintGrid(bool before)
 	{
 		string[,] g1 = new string[10, 10];
-		string log = "Grid before reaching row 6";
+		string log = $"Grid {(before ? "before" : "after")} reaching row 6";
 		for (int i = 0; i < 10; i++)
         {
 			log += "\n";
 
 			for (int j = 0; j < 10; j++)
 			{
-				string answer = Grid[i, j].Condition ? "T " : "F ";
+				string answer = Grid[i, j].Safe ? "T " : "F ";
 				log += answer;
 				g1[i, j] = answer;
 			}
 		}
 
 		Logging(log);
-		string g2 = "FFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFFFF\nFFFFFFTTTF\nTFTFFTTTTF\nTTTTTTTTTT\nFFTTTTFTFF\nTTTTTTTTTT\nFTFFFTFFTF";
 
-
-		SameGrid(g1, g2);
+		if (before)
+        {
+			string g2 = "FFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFFFF\nFFFFFFTTTF\nTFTFFTTTTF\nTTTTTTTTTT\nFFTTTTFTFF\nTTTTTTTTTT\nFTFFFTFFTF";
+			SameGrid(g1, g2);
+		}
 	}
+		
 
 	void SameGrid(string[,] g1, string temp)
 	{
@@ -150,60 +204,91 @@ public class Main : MonoBehaviour
 
 	void Update()
 	{
+		int minutes = (int)Bomb.GetTime() / 60;
+		int seconds = (int)Bomb.GetTime() % 60;
+		
+		if (minutes > startingMinutes)
+        {
+			return;
+        }
 
+		if (currentMinutes == -1 || currentMinutes > minutes)
+        {
+			currentMinutes = minutes; 
+			foreach (Cell c in flickeringCells)
+            {
+				c.AlreadyFlickered1 = false;
+				c.AlreadyFlickered2 = false;
+			}
+		}
+
+		foreach (Cell c in flickeringCells)
+        {
+			if (!c.AlreadyFlickered1 && c.FlickerTime1 == seconds)
+            {
+				StartCoroutine(Flicker(c));
+				c.AlreadyFlickered1 = true;
+            }
+
+			else if (!c.AlreadyFlickered2 && c.FlickerTime2 == seconds)
+			{
+				StartCoroutine(Flicker(c));
+				c.AlreadyFlickered2 = true;
+			}
+		}
 	}
 
 	void SetSafeRow1()
 	{
 		if (rcaPortNum > 1)
 		{
-			Grid[9, 0].Condition = true;
+			Grid[9, 0].Safe = true;
 		}
 
 		if (serialNumberDigits.Last() % 2 == 0)
 		{
-			Grid[9, 1].Condition = true;
+			Grid[9, 1].Safe = true;
 		}
 
 		if (litIndicators.Count > unlitIndicators.Count)
 		{
 
-			Grid[9, 2].Condition = true;
+			Grid[9, 2].Safe = true;
 		}
 
 		if (dBatteryCount == 0)
 		{
-			Grid[9, 3].Condition = true;
+			Grid[9, 3].Safe = true;
 		}
 
 		if (indicators.Contains("BOB") || indicators.Contains("FRK"))
 		{
-			Grid[9, 4].Condition = true;
+			Grid[9, 4].Safe = true;
 		}
 
 		if (Bomb.GetPortPlates().Any(x => x.Contains("Parallel") && x.Contains("Serial")))
 		{
-			Grid[9, 5].Condition = true;
+			Grid[9, 5].Safe = true;
 		}
 
 		if (psPortNum == 0 && dviPortNum == 0)
 		{
-			Grid[9, 6].Condition = true;
+			Grid[9, 6].Safe = true;
 		}
 
 		if (dBatteryCount > aBatteryCount)
 		{
-			Grid[9, 7].Condition = true;
+			Grid[9, 7].Safe = true;
 		}
 
 		if (serialNumberLetters.Count == 3)
 		{
-			Grid[9, 8].Condition = true;
+			Grid[9, 8].Safe = true;
 		}
 
 		if (serialNumberDigits.Sum() < 10)
 		{
-			Grid[9, 9].Condition = true;
+			Grid[9, 9].Safe = true;
 		}
 	}
 
@@ -227,7 +312,7 @@ public class Main : MonoBehaviour
 
 		for (int i = 0; i < num.Count; i++)
         {
-			Grid[7, GetIndex(num[i])].Condition = true;
+			Grid[7, GetIndex(num[i])].Safe = true;
         }
 	}
 
@@ -265,7 +350,7 @@ public class Main : MonoBehaviour
 
 		if (list.Count == 0)
 		{
-			Grid[5, 0].Condition = Grid[5, 9].Condition = true;
+			Grid[5, 0].Safe = Grid[5, 9].Safe = true;
 			row6List.Add(new KeyValuePair<string, HighLow>("NONE", new HighLow(0, 9)));
 		}
 
@@ -280,7 +365,7 @@ public class Main : MonoBehaviour
 					case "PS":
 						foreach (int num in serialNumberDigits)
                         {
-							Grid[5, GetIndex(num)].Condition = true;
+							Grid[5, GetIndex(num)].Safe = true;
 						}
 
 						high = GetIndex(serialNumberDigits.Last());
@@ -312,7 +397,7 @@ public class Main : MonoBehaviour
 				Debug.Log("Port " + s);
 				//Debug.Log("High " + high);
 				//Debug.Log("Low " + low);
-				Grid[5, high].Condition = Grid[5, low].Condition = true;
+				Grid[5, high].Safe = Grid[5, low].Safe = true;
 				row6List.Add(new KeyValuePair<string, HighLow>(s, new HighLow(high, low)));
 			}
 		}
@@ -347,7 +432,7 @@ public class Main : MonoBehaviour
 				case "MSA":
 				case "NSA":
 				case "TRN":
-					Grid[4, kv.Value.Lower].Condition = true;
+					Grid[4, kv.Value.Lower].Safe = true;
 					break;
 
 				case "CLR":
@@ -356,15 +441,194 @@ public class Main : MonoBehaviour
 				case "SIG":
 				case "SND":
 				case "NONE":
-					Grid[4, kv.Value.Higher].Condition = true;
+					Grid[4, kv.Value.Higher].Safe = true;
 					break;
 			}
 		}
 	}
 
 	void SetSafeRow7()
-	{ 
+	{
+		Cell c = currentPos;
 		
+		for (int i = 0; i < serialNumber.Length; i++)
+        {
+			if ((c.Col + 1) % 10 % 3 == 0)
+            {
+				if (c.Col == 0)
+                {
+					c = Grid[4, 9];
+                }
+				else
+                {
+					c = Grid[4, c.Col - 1];
+                }
+            }
+
+			else if ((c.Col + 1) % 10 % 2 == 0)
+            {
+				c = Grid[4, (c.Col + 1) % 10];
+            }
+
+			else
+            {
+				Grid[3, c.Col].Safe = true;
+				return;
+            }
+		}
+
+		Grid[3, c.Col].Safe = true;
+	}
+
+	void SetSafeRow9()
+	{
+		row9Safe = new List<int>();
+
+		do
+		{
+			row9Safe.Add(Rnd.Range(0, 10));
+		} while (row9Safe.Distinct().Count() != 5);
+
+		row9Safe = row9Safe.Distinct().ToList();
+
+		for (int i = 0; i < 10; i++)
+        {
+			if (row9Safe.Contains(i))
+            {
+				Grid[1, i].Safe = true;
+            }
+			else
+            {
+				Grid[1, i].Flicker = true;
+			}
+		}
+	}
+
+	void SetSafeRow10()
+	{
+		List<int> list = new List<int>() { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
+
+		foreach (int i in row9Safe)
+        {
+			list.Remove(i);
+        }
+
+		//There will only be one set of vertically-adjacent squares in rows 9 and 10 that are safe.
+		int index = row9Safe[Rnd.Range(0, row9Safe.Count)];
+
+		while (list.Count != 2)
+        {
+			list.RemoveAt(Rnd.Range(0, list.Count));
+        }
+
+		list.Add(index);
+
+		for (int i = 0; i < 10; i++)
+		{
+			if (list.Contains(i))
+			{
+				Grid[0, i].Safe = true;
+			}
+			else
+			{
+				Grid[0, i].Flicker = true;
+			}
+		}
+	}
+
+	int SetFlickeringTime(bool before29)
+	{
+		return before29 ? Rnd.Range(30, 60) : Rnd.Range(1, 29);
+	}
+
+	void KeypadPress(KMSelectable s)
+	{
+		Cell c = GetCell(s);
+
+		string log = $"Pressed ({(c.Row + 1) % 10},{(c.Col + 1) % 10}).";
+
+		//if player is not set, check to see if cell pressed is in the first row
+		if (currentPos.Row == -1 && currentPos.Col == -1)
+        {
+			if (c.Row != 0)
+			{
+				log += " This is not in the first row. Strike!";
+				Logging(log);
+				Strike();
+				return;
+			}
+
+			//check cell is safe
+			if (!c.Safe)
+            {
+				log += " This is not safe. Strike!";
+				Logging(log);
+				Strike();
+				return;
+			}
+
+			currentPos = c;
+			Logging(log);
+			return;
+		}
+
+		//check to see if the cell is orthongal from current pos
+		if (!currentPos.Adjacent(c))
+        {
+			log += " This is not adjacent. Strike!";
+			Logging(log);
+			Strike();
+			return;
+		}
+
+		//check cell is safe
+		if (!c.Safe)
+		{
+			log += " This is not safe. Strike!";
+			Logging(log);
+			Strike();
+			return;
+		}
+
+		currentPos = c;
+		Logging(log);
+
+		//if current cell is in 6th row, make all cells in that row safe
+		if (!row6CellSafe && c.Row == 4)
+        {
+			row6CellSafe = true;
+			SetConditionTrue(4);
+			SetSafeRow7();
+			
+			PrintGrid(false);
+		}
+	}
+
+	IEnumerator Flicker(Cell c)
+    {
+		c.SetWhite(true);
+		yield return new WaitForSeconds(1f);
+		c.SetWhite(false);
+	}
+
+	Cell GetCell(KMSelectable s)
+	{
+		foreach (Cell c in Grid)
+		{ 
+			if (c.Button == s)
+            {
+				return c;
+            }
+
+		}
+
+		return null;
+	}
+
+	void Strike()
+	{
+		GetComponent<KMBombModule>().HandleStrike();
+		ResetModule();
 	}
 
 	int GetIndex(int num)
@@ -384,7 +648,7 @@ public class Main : MonoBehaviour
 	{
 		for (int i = 0; i < 10; i++)
 		{
-			Grid[row, i].Condition = true;
+			Grid[row, i].Safe = true;
 		}
 	}
 
