@@ -49,6 +49,7 @@ public class Main : MonoBehaviour
 
 	void Awake()
 	{
+		ModuleId = ModuleIdCounter++;
 		buttons = GetComponent<KMSelectable>().Children;
 		Grid = new Cell[10, 10];
 
@@ -108,7 +109,7 @@ public class Main : MonoBehaviour
 	private void PrintGrid()
 	{
 		string[,] g1 = new string[10, 10];
-		string log = "";
+		string log = "Grid before reaching row 6";
 		for (int i = 0; i < 10; i++)
         {
 			log += "\n";
@@ -122,7 +123,7 @@ public class Main : MonoBehaviour
 		}
 
 		Logging(log);
-		string g2 = "FFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFTTF\nTFTFFTFTTF\nTTTTTTTTTT\nFFTTTTFTFF\nTTTTTTTTTT\nFTFFFTFFTF";
+		string g2 = "FFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFFFF\nFFFFFFTTTF\nTFTFFTTTTF\nTTTTTTTTTT\nFFTTTTFTFF\nTTTTTTTTTT\nFTFFFTFFTF";
 
 
 		SameGrid(g1, g2);
@@ -142,7 +143,6 @@ public class Main : MonoBehaviour
                 }
             }
 		}
-
 	}
 
 
@@ -244,7 +244,7 @@ public class Main : MonoBehaviour
 			{ "SERIAL", serialPortNum},
 		};
 
-		List<KeyValuePair<string, int>> list = new List<KeyValuePair<string, int>>();
+		List<string> list = new List<string>();
 
 
 
@@ -255,9 +255,9 @@ public class Main : MonoBehaviour
 				break;
             }
 
-			if (kv.Value > 1)
+			if (kv.Value > 0)
 			{
-				list.Add(kv);
+				list.Add(kv.Key);
 			}
 		}
 
@@ -271,18 +271,20 @@ public class Main : MonoBehaviour
 
 		else
         {
-			foreach (KeyValuePair<string, int> kv in list)
+			foreach (string s in list)
             {
 				int high = -1;
 				int low = -1;
-                switch (kv.Key)
+                switch (s)
                 {
 					case "PS":
 						foreach (int num in serialNumberDigits)
                         {
 							Grid[5, GetIndex(num)].Condition = true;
 						}
-						row6List.Add(new KeyValuePair<string, HighLow>(kv.Key, new HighLow(serialNumberDigits.Last(), serialNumberDigits.First())));
+
+						high = GetIndex(serialNumberDigits.Last());
+						low = GetIndex(serialNumberDigits.First());
 						break;
 
 					case "RCA":
@@ -307,10 +309,27 @@ public class Main : MonoBehaviour
 						break;
 				}
 
+				Debug.Log("Port " + s);
+				//Debug.Log("High " + high);
+				//Debug.Log("Low " + low);
 				Grid[5, high].Condition = Grid[5, low].Condition = true;
-				row6List.Add(new KeyValuePair<string, HighLow>(kv.Key, new HighLow(high, low)));
+				row6List.Add(new KeyValuePair<string, HighLow>(s, new HighLow(high, low)));
 			}
 		}
+
+
+		//if (list.Count == 0)
+        //{
+		//	Debug.Log("Row 5 list is empty");
+        //}
+		//
+		//else
+        //{
+		//	foreach (string s in list)
+		//	{
+		//		Debug.Log(s);
+		//	}
+		//}
 	}
 
 	void SetSafeRow6()
