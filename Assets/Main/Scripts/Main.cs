@@ -117,6 +117,19 @@ public class Main : MonoBehaviour
 			int col = i % 10;
 			Grid[row, col] = new Cell(row, col, buttons[i], white);
 		}
+
+		for (int i = 0; i < 10; i++)
+        {
+			for (int j = 0; j < 10; j++)
+            {
+				Cell c = Grid[i, j];
+
+				c.Up = i == 0 ? null : Grid[i - 1, j];
+				c.Down = i == 9 ? null : Grid[i + 1, j];
+				c.Left = j == 0 ? null : Grid[i, j - 1];
+				c.Right = j == 9 ? null : Grid[i, j + 1];
+			}
+        }
 		flickeringCells = new List<Cell>();
 		currentPos = new Cell(-1, -1, null, null);
 		row6CellSafe = false;
@@ -212,7 +225,7 @@ public class Main : MonoBehaviour
 		int minutes = (int)Bomb.GetTime() / 60;
 		int seconds = (int)Bomb.GetTime() % 60;
 
-		if (minutes > startingMinutes)
+		if (minutes >= startingMinutes)
         {
 			return;
         }
@@ -685,16 +698,118 @@ public class Main : MonoBehaviour
 	}
 
 #pragma warning disable 414
-	private readonly string TwitchHelpMessage = @"Use !{0} to do something.";
+	private readonly string TwitchHelpMessage = @"Use `!{0} row col` to press the button at that location. Only can process one press per command";
 #pragma warning restore 414
 
 	IEnumerator ProcessTwitchCommand(string Command)
 	{
+		string[] commands = Command.Trim().Split(' ');
 		yield return null;
+
+		if (commands.Length != 2)
+		{
+			yield return "sendtochaterror Invalid amount of commands.";
+			yield break;
+		}
+
+		foreach (string s in commands)
+        {
+			int num;
+
+			bool b = int.TryParse(s, out num);
+
+			if (!b)
+            {
+				yield return "sendtochaterror Commands contains characters that are not numbers.";
+				yield break;
+			}
+			else if(num < 0 || num > 9)
+            {
+				yield return "sendtochaterror Commands contains numbers that are less than 0 or greater than 9.";
+				yield break;
+			}
+		}
+
+		int row = int.Parse(commands[0]) - 1 == -1 ? 9 : int.Parse(commands[0]) - 1;
+		int col = int.Parse(commands[1]) - 1 == -1 ? 9 : int.Parse(commands[1]) - 1;
+
+		KeypadPress(Grid[row, col].Button);
 	}
 
 	IEnumerator TwitchHandleForcedSolve()
 	{
 		yield return null;
+
+		int index = -1;
+		for (int i = 0; i < 10; i++)
+        {
+			if (Grid[9, i].Safe)
+            {
+                index = i;
+				break;
+            }
+        }
+
+		List<Cell> list = new List<Cell>();
+
+		for (int i = 0; i < 10; i++)
+		{
+			list = BreadthFirstSearch(Grid[9, index]);
+			if (list.Count != 0)
+            {
+				break;
+            }
+		}
+
+		foreach (Cell c in list)
+        {
+			Debug.Log(c.ToString());
+        }
+	}
+
+	List<Cell> BreadthFirstSearch(Cell start)
+    {
+		Queue<Cell> q = new Queue<Cell>();
+		List<Cell> list = new List<Cell>();
+		q.Enqueue(start);
+
+		while (q.Count > 0)
+        {
+			Cell currentCell = q.Dequeue();
+			
+			list.Add(currentCell);
+
+			if (currentCell.Up != null && currentCell.Up.Safe && !currentCell.Up.Viseted)
+            {
+				q.Enqueue(currentCell.Up);
+				currentCell.Up.Viseted = true;
+
+			}
+
+			if (currentCell.Left != null && currentCell.Left.Safe && !currentCell.Left.Viseted)
+			{
+				q.Enqueue(currentCell.Left);
+				currentCell.Left.Viseted = true;
+			}
+
+			if (currentCell.Down != null && currentCell.Down.Safe && !currentCell.Down.Viseted)
+			{
+				q.Enqueue(currentCell.Down);
+				currentCell.Down.Viseted = true;
+			}
+
+			if (currentCell.Right != null && currentCell.Right.Safe && !currentCell.Right.Viseted)
+			{
+				q.Enqueue(currentCell.Right);
+				currentCell.Right.Viseted = true;
+			}
+
+			if (currentCell.Row == 0)
+            {
+				return list;
+			}
+		}
+
+		return new List<Cell>();
 	}
 }

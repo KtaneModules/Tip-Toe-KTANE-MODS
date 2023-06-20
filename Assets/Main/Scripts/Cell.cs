@@ -10,6 +10,11 @@ public class Cell {
     public int Row { get; private set; }
     public int Col { get; private set; }
     public KMSelectable Button { get; private set; }
+    public Cell Up { get;  set; }
+    public Cell Right { get;  set; }
+    public Cell Down { get;  set; }
+    public Cell Left { get;  set; }
+    public bool Viseted { get; set; }
 
     private MeshRenderer m;
     Material white;
@@ -35,16 +40,20 @@ public class Cell {
 
     public bool Adjacent(Cell c)
     {
-        bool up = c.Row == Row - 1 && c.Col == Col;
-        bool left = c.Row == Row && c.Col == Col - 1;
-        bool right = c.Row == Row && c.Col == Col + 1;
-        bool down = c.Row == Row + 1 && c.Col == Col;
-
-        return up || left || right || down;
+        return
+            Up == c ||
+            Left == c ||
+            Down == c ||
+            Left == c;
     }
 
     public void SetWhite(bool t)
     {
         m.material = t ? white : orange;
+    }
+
+    public override string ToString()
+    {
+        return $"{Row} {Col}";
     }
 }
