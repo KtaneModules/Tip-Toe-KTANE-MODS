@@ -10,11 +10,17 @@ public class Cell {
     public int Row { get; private set; }
     public int Col { get; private set; }
     public KMSelectable Button { get; private set; }
+
     public Cell Up { get;  set; }
     public Cell Right { get;  set; }
     public Cell Down { get;  set; }
     public Cell Left { get;  set; }
     public bool Viseted { get; set; }
+    public int Heuristic { get; set; }
+    public int FinalCost { get; set; }
+    public int G { get; set; }
+
+    public Cell Parent { get; set; }
 
     private MeshRenderer m;
     Material white;

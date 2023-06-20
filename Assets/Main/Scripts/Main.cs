@@ -740,76 +740,160 @@ public class Main : MonoBehaviour
 	{
 		yield return null;
 
-		int index = -1;
+		Dictionary<Cell, List<Cell>> d = new Dictionary<Cell, List<Cell>>();
+
+		List<int> startingCells = new List<int>();
+		List<int> endingCells = new List<int>();
 		for (int i = 0; i < 10; i++)
         {
 			if (Grid[9, i].Safe)
             {
-                index = i;
-				break;
-            }
-        }
+				startingCells.Add(i);
+			}
 
-		List<Cell> list = new List<Cell>();
-
-		for (int i = 0; i < 10; i++)
-		{
-			list = BreadthFirstSearch(Grid[9, index]);
-			if (list.Count != 0)
+			if (Grid[4, i].Safe)
             {
-				break;
+				endingCells.Add(i);
             }
-		}
-
-		foreach (Cell c in list)
-        {
-			Debug.Log(c.ToString());
         }
+
+		//int startingCellIndex = -1;
+		//int endingCellIndex = -1;
+
+		List<Cell> path = null;
+
+		path = FindPath(Grid[9, 1], Grid[4, 6]);
+
+		/*
+		 		for (int i = 0; i < startingCells.Count; i++)
+        {
+			for (int j = 0; j < endingCells.Count; j++)
+			{
+				Cell start = Grid[9,i];
+				Cell end = Grid[4, j];
+
+				Debug.Log("this for loop is being seen");
+				path = FindPath(start, end);
+
+				if (path != null)
+                {
+					break;
+                }
+			}
+
+			if (path != null)
+			{
+				break;
+			}
+		}
+		 */
+
+
+		if (path != null)
+        {
+			Debug.Log(path.Count);
+			Debug.Log(string.Join(" ", path.Select(x => x.ToString()).ToArray()));
+		}
+		else
+        {
+			Debug.Log("Bullshit has happen that has lead a path to not be found");
+        }
+
 	}
 
-	List<Cell> BreadthFirstSearch(Cell start)
+	List<Cell> FindPath(Cell start, Cell end)
     {
-		Queue<Cell> q = new Queue<Cell>();
-		List<Cell> list = new List<Cell>();
-		q.Enqueue(start);
+		Debug.Log("This method is being seen");
+		SetHeristic(end);
 
-		while (q.Count > 0)
+		List<Cell> open = new List<Cell>();
+		List<Cell> closed = new List<Cell>();
+		
+
+
+		start.G = 0;
+		
+		Cell currentCell = start;
+		closed.Add(start);
+
+
+
+		while (!open.Contains(end)) //change to when end is reached
         {
-			Cell currentCell = q.Dequeue();
-			
-			list.Add(currentCell);
+			Debug.Log("The while loop is being reached");
 
-			if (currentCell.Up != null && currentCell.Up.Safe && !currentCell.Up.Viseted)
+			//Debug.Log("Current cell is " + currentCell.ToString());
+
+			List<Cell> neighbors = new List<Cell>();
+
+			neighbors.Add(currentCell.Up);
+			neighbors.Add(currentCell.Left);
+			neighbors.Add(currentCell.Down);
+			neighbors.Add(currentCell.Right);
+
+			for (int i = neighbors.Count - 1; i > 0; i--)
             {
-				q.Enqueue(currentCell.Up);
-				currentCell.Up.Viseted = true;
+				if (neighbors[i] == null || !neighbors[i].Safe)
+                {
+					neighbors.RemoveAt(i);
+                }
+            }
 
-			}
-
-			if (currentCell.Left != null && currentCell.Left.Safe && !currentCell.Left.Viseted)
-			{
-				q.Enqueue(currentCell.Left);
-				currentCell.Left.Viseted = true;
-			}
-
-			if (currentCell.Down != null && currentCell.Down.Safe && !currentCell.Down.Viseted)
-			{
-				q.Enqueue(currentCell.Down);
-				currentCell.Down.Viseted = true;
-			}
-
-			if (currentCell.Right != null && currentCell.Right.Safe && !currentCell.Right.Viseted)
-			{
-				q.Enqueue(currentCell.Right);
-				currentCell.Right.Viseted = true;
-			}
-
-			if (currentCell.Row == 0)
+			foreach (Cell c in neighbors)
             {
-				return list;
-			}
+				if (!open.Contains(c))
+                {
+					c.Parent = currentCell;
+					open.Add(c);
+					c.G = c.Parent.G + 1;
+					c.FinalCost = c.G + c.Heuristic;
+                }
+
+				else
+                {
+					int potentialCost = c.Parent.G + 1;
+					if (c.FinalCost > potentialCost)
+                    {
+						c.Parent = currentCell;
+						c.G = potentialCost;
+						c.FinalCost = c.G + c.Heuristic;
+					}
+				}
+            }
+
+			currentCell = open.OrderBy(x => x.FinalCost).ToList().Last();
+			closed.Add(currentCell);
 		}
+	
+		if (!open.Contains(end))
+        {
+			return null;
+        }
 
-		return new List<Cell>();
+		Debug.Log($"Start at " + start.ToString());
+		Debug.Log($"End at " + end.ToString());
+
+		List<Cell> path = new List<Cell>();
+
+		Cell current = end;
+		while (!path.Contains(start))
+        {
+			path.Add(current);
+			current = current.Parent;
+        }
+
+		return path;
 	}
+
+	void SetHeristic(Cell end)
+    {
+		foreach (Cell c in Grid)
+        {
+			c.Heuristic = Math.Abs(end.Row - c.Row) + Math.Abs(end.Col - c.Col);
+			c.Parent = null;
+			c.FinalCost = 0;
+			c.G = 0;
+        }
+    }
+
 }
