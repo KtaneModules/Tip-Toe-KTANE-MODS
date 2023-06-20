@@ -88,7 +88,6 @@ public class Main : MonoBehaviour
 		rjPortNum = ports.Count(x => x.ToUpper() == "RJ45");
 		parallelPortNum = ports.Count(x => x.ToUpper() == "PARALLEL");
 		serialPortNum = ports.Count(x => x.ToUpper() == "SERIAL");
-
 	}
 
 
@@ -108,6 +107,7 @@ public class Main : MonoBehaviour
 
 	private void PrintGrid()
 	{
+		string[,] g1 = new string[10, 10];
 		string log = "";
 		for (int i = 0; i < 10; i++)
         {
@@ -115,11 +115,34 @@ public class Main : MonoBehaviour
 
 			for (int j = 0; j < 10; j++)
 			{
-				log += Grid[i, j].Condition ? "T " : "F ";
+				string answer = Grid[i, j].Condition ? "T " : "F ";
+				log += answer;
+				g1[i, j] = answer;
 			}
 		}
 
 		Logging(log);
+		string g2 = "FFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFFFF\nFFFFFFFTTF\nTFTFFTFTTF\nTTTTTTTTTT\nFFTTTTFTFF\nTTTTTTTTTT\nFTFFFTFFTF";
+
+
+		SameGrid(g1, g2);
+	}
+
+	void SameGrid(string[,] g1, string temp)
+	{
+		string[] g2 = temp.Split('\n');
+
+		for (int i = 0; i < 10; i++)
+        {
+			for (int j = 0; j < 10; j++)
+            {
+				if (g1[i, j].Trim() != "" + g2[i][j])
+                {
+					Debug.Log($"Different at ({i},{j})");
+                }
+            }
+		}
+
 	}
 
 
@@ -173,7 +196,7 @@ public class Main : MonoBehaviour
 			Grid[9, 7].Condition = true;
 		}
 
-		if (serialNumberLetters.Count > 3)
+		if (serialNumberLetters.Count == 3)
 		{
 			Grid[9, 8].Condition = true;
 		}
