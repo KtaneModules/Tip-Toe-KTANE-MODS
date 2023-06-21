@@ -650,7 +650,6 @@ public class Main : MonoBehaviour
             {
 				return c;
             }
-
 		}
 
 		return null;
@@ -679,8 +678,6 @@ public class Main : MonoBehaviour
 
 		return col;
 	}
-
-
 
 	void SetConditionTrue(int row)
 	{
@@ -745,68 +742,123 @@ public class Main : MonoBehaviour
 
 		Dictionary<Cell, List<Cell>> d = new Dictionary<Cell, List<Cell>>();
 
-		List<int> startingCells = new List<int>();
-		List<int> endingCells = new List<int>();
+		List <Cell> startingCells = new List<Cell>();
+		List<Cell> ending1Cells = new List<Cell>();
+		List<Cell> ending2Cells = new List<Cell>();
+
 		for (int i = 0; i < 10; i++)
         {
 			if (Grid[9, i].Safe)
             {
-				startingCells.Add(i);
+				startingCells.Add(Grid[9, i]);
 			}
 
 			if (Grid[4, i].Safe)
             {
-				endingCells.Add(i);
+				ending1Cells.Add(Grid[4, i]);
             }
-        }
 
-		//int startingCellIndex = -1;
-		//int endingCellIndex = -1;
+			if (Grid[0, i].Safe)
+            {
+				ending2Cells.Add(Grid[0, i]);
+			}
+		}
 
-		List<Cell> path = null;
+		List<Cell> path1 = null;
+		List<Cell> path2 = null;
 
-		path = FindPath(Grid[9, 1], Grid[4, 6]);
+		Cell start1;
+		Cell end1 = null;
 
-		/*
-		 		for (int i = 0; i < startingCells.Count; i++)
+		
+
+		//path = FindPath(Grid[9, 1], Grid[4, 6]);
+
+
+		for (int i = 0; i < startingCells.Count; i++)
         {
-			for (int j = 0; j < endingCells.Count; j++)
+			for (int j = 0; j < ending1Cells.Count; j++)
 			{
-				Cell start = Grid[9,i];
-				Cell end = Grid[4, j];
+				start1 = startingCells[i];
+				end1 = ending1Cells[i];
+				
+				path1 = FindPath(start1, end1);
 
-				Debug.Log("this for loop is being seen");
-				path = FindPath(start, end);
-
-				if (path != null)
+				if (path1 != null)
                 {
 					break;
                 }
 			}
 
-			if (path != null)
+			if (path1 != null)
 			{
 				break;
 			}
 		}
-		 */
 
-
-		if (path != null)
+		if (path1 != null)
         {
-			Debug.Log(path.Count);
-			Debug.Log(string.Join(" ", path.Select(x => x.ToString()).ToArray()));
+			Debug.Log(path1.Count);
+			Debug.Log(string.Join(" ", path1.Select(x => x.ToString()).ToArray()));
+
+			foreach (Cell c in path1)
+            {
+				KeypadPress(c.Button);
+				yield return new WaitForSeconds(.1f); //here to make sure row 6 and 7 safe spaces update
+			}
 		}
 		else
         {
-			Debug.Log("Bullshit has happen that has lead a path to not be found");
+			yield return "sendtochaterror An error occured. Please contact developer with log.";
+			yield break;
         }
 
-	}
+		
+		Cell end2;
 
-	List<Cell> FindPath(Cell start, Cell end)
+		for (int i = 0; i < ending2Cells.Count; i++)
+        {
+			end2 = ending2Cells[i];
+
+			path2 = FindPath(end1, end2);
+
+			if (path2 != null)
+			{
+				break;
+            }
+        }
+
+        if (path2 != null)
+        {
+			path2.RemoveAt(0); //gets rid of space already on
+			Debug.Log(path2.Count);
+			Debug.Log(string.Join(" ", path2.Select(x => x.ToString()).ToArray()));
+			foreach (Cell c in path2)
+			{
+				KeypadPress(c.Button);
+				yield return new WaitForSeconds(.1f); //consistancy
+			}
+		}
+		else
+        {
+			yield return "sendtochaterror An error occured. Please contact developer with log.";
+			yield break;
+		}
+
+		while(!ModuleSolved)
+        {
+			yield return true;
+        }
+    }
+
+    List<Cell> FindPath(Cell start, Cell end)
     {
+		Debug.Log($"Start at " + start.ToString());
+		Debug.Log($"End at " + end.ToString());
+
 		SetHeristic(end);
+
+		
 
 		List<Cell> open = new List<Cell>();
 		List<Cell> closed = new List<Cell>();
@@ -814,7 +866,6 @@ public class Main : MonoBehaviour
 		start.G = 0;
 		
 		Cell currentCell = start;
-		closed.Add(start);
 
 		int count = 0;
 
@@ -828,7 +879,7 @@ public class Main : MonoBehaviour
 				break;
             }
 
-			Debug.Log("Current cell is " + currentCell.ToString());
+			//Debug.Log("Current cell is " + currentCell.ToString());
 
 			List<Cell> neighbors = new List<Cell>();
 
@@ -838,11 +889,11 @@ public class Main : MonoBehaviour
 			neighbors.Add(currentCell.Right);
 
 
-			Debug.Log("BEFORE neighbors are " + string.Join(" ", neighbors.Select(x => x == null ? "poop" : x.ToString()).ToArray()));
+			//Debug.Log("BEFORE neighbors are " + string.Join(" ", neighbors.Select(x => x == null ? "poop" : x.ToString()).ToArray()));
 
 			neighbors = GetRidOfBadNeighbors(neighbors, closed);
 
-			Debug.Log("neighbors are " + string.Join(" ", neighbors.Select(x => x.ToString()).ToArray()));
+			//Debug.Log("neighbors are " + string.Join(" ", neighbors.Select(x => ($"{x.ToString()} F={x.FinalCost}")).ToArray()));
 
 			foreach (Cell c in neighbors)
             {
@@ -869,8 +920,13 @@ public class Main : MonoBehaviour
 			open.Remove(currentCell);
 			closed.Add(currentCell);
 
-			currentCell = open.OrderBy(x => x.FinalCost).ToList().Last();
-			Debug.Log("Cells in open list " + string.Join(" ", open.Select(x => x.ToString()).ToArray()));
+			if (open.Count == 0) //there is no path to end
+            {
+				return null;
+            }
+			open = open.OrderBy(x => x.FinalCost).ToList();
+			currentCell = open.First();
+			//Debug.Log("Cells in open list " + string.Join(" ", open.Select(x => ($"{x.ToString()} F={x.FinalCost}")).ToArray()));
 			neighbors.Clear();
 		}
 	
@@ -879,8 +935,7 @@ public class Main : MonoBehaviour
 			return null;
         }
 
-		Debug.Log($"Start at " + start.ToString());
-		Debug.Log($"End at " + end.ToString());
+		
 
 		List<Cell> path = new List<Cell>();
 
