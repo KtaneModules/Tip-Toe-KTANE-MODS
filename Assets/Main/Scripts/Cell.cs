@@ -75,7 +75,7 @@ public class Cell {
 
     public override string ToString()
     {
-        return $"({(Row + 1) % 10}, {(Col + 1) % 10})";
+        return $"({10 - Row}, {(Col + 1) % 10})";
     }
 
     public void ShowText(bool t)
