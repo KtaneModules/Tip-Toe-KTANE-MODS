@@ -35,6 +35,7 @@ public class Main : MonoBehaviour
 	string serialNumber;
 	List<int> serialNumberDigits;
 	List<char> serialNumberLetters;
+	List<int> serialNumberAlphaDigits;
 
 	List<string> indicators;
 	List<string> litIndicators;
@@ -320,25 +321,27 @@ public class Main : MonoBehaviour
 
 	void SetSafeRow3()
 	{
-		List<int> num = new List<int>();
+		serialNumberAlphaDigits = new List<int>();
 
 		foreach (char c in serialNumber)
 		{
-			num.Add(Char.IsDigit(c) ? int.Parse("" + c) : (c - 64) % 10);
+			serialNumberAlphaDigits.Add(Char.IsDigit(c) ? int.Parse("" + c) : (c - 64) % 10);
 		}
 
-		if (num.Distinct().Count() == num.Count)
+		List<int> list = serialNumberAlphaDigits.ToList();
+
+		if (list.Distinct().Count() == list.Count)
 		{
-			num.RemoveAt(5);
+			list.RemoveAt(5);
 		}
 		else
         {
-			num = num.Distinct().ToList();
+			list = list.Distinct().ToList();
 		}
 
-		for (int i = 0; i < num.Count; i++)
+		for (int i = 0; i < list.Count; i++)
         {
-			Grid[7, GetIndex(num[i])].Safe = true;
+			Grid[7, GetIndex(list[i])].Safe = true;
         }
 	}
 
@@ -459,9 +462,11 @@ public class Main : MonoBehaviour
 	{
 		Cell c = currentPos;
 		
-		for (int i = 0; i < serialNumber.Length; i++)
+		for (int i = 0; i < serialNumberAlphaDigits.Count; i++)
         {
-			if ((c.Col + 1) % 10 % 3 == 0)
+			int digit = serialNumberAlphaDigits[i];
+
+			if (digit % 3 == 0)
             {
 				if (c.Col == 0)
                 {
@@ -473,7 +478,7 @@ public class Main : MonoBehaviour
                 }
             }
 
-			else if ((c.Col + 1) % 10 % 2 == 0)
+			else if (digit % 2 == 0)
             {
 				c = Grid[4, (c.Col + 1) % 10];
             }
