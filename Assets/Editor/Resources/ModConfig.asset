@@ -14,7 +14,7 @@ MonoBehaviour:
   id: TipToe
   title: Tip Toe
   author: 
-  description: 
+  description: bruh
   version: 
   outputFolder: build
-  previewImage: {fileID: 0}
+  previewImage: {fileID: 2800000, guid: f0928dfb2545f374ab39b0399c30b0c8, type: 3}

@@ -577,8 +577,6 @@ public class Main : MonoBehaviour
 
 		string log = $"Pressed {c}.";
 
-		//string log = $"Pressed ({(c.Row + 1) % 10},{(c.Col + 1) % 10}).";
-
 		//if player is not set, check to see if cell pressed is in the first row
 		if (currentPos.Row == -1 && currentPos.Col == -1)
         {
