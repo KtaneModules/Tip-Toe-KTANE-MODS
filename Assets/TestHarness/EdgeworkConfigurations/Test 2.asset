@@ -12,18 +12,18 @@ MonoBehaviour:
   m_Name: Test 2
   m_EditorClassIdentifier: 
   SerialNumberType: 2
-  CustomSerialNumber: 0L7IU1
+  CustomSerialNumber: FW8JJ1
   TwoFactorResetTime: 30
   Widgets:
   - Type: 0
-    Count: 1
+    Count: 2
     PortPlateType: 0
-    DVIPort: 1
-    ParallelPort: 1
-    PS2Port: 1
-    RJ45Port: 1
-    SerialPort: 1
-    StereoRCAPort: 1
+    DVIPort: 0
+    ParallelPort: 0
+    PS2Port: 0
+    RJ45Port: 0
+    SerialPort: 0
+    StereoRCAPort: 0
     ComponentVideoPort: 0
     CompositeVideoPort: 0
     HDMIPort: 0
@@ -41,15 +41,15 @@ MonoBehaviour:
     IndicatorState: 0
     CustomQueryKey: 
     CustomData: 
-  - Type: 0
+  - Type: 2
     Count: 1
     PortPlateType: 0
-    DVIPort: 1
-    ParallelPort: 1
-    PS2Port: 1
-    RJ45Port: 1
-    SerialPort: 1
-    StereoRCAPort: 1
+    DVIPort: 0
+    ParallelPort: 0
+    PS2Port: 0
+    RJ45Port: 0
+    SerialPort: 0
+    StereoRCAPort: 0
     ComponentVideoPort: 0
     CompositeVideoPort: 0
     HDMIPort: 0
@@ -62,7 +62,7 @@ MonoBehaviour:
     BatteryCount: 0
     MinBatteries: 0
     MaxBatteries: 0
-    IndicatorLabel: 0
+    IndicatorLabel: 2
     CustomLabel: 
     IndicatorState: 0
     CustomQueryKey: 
@@ -70,12 +70,12 @@ MonoBehaviour:
   - Type: 1
     Count: 1
     PortPlateType: 0
-    DVIPort: 0
+    DVIPort: 1
     ParallelPort: 0
-    PS2Port: 1
-    RJ45Port: 1
+    PS2Port: 0
+    RJ45Port: 0
     SerialPort: 0
-    StereoRCAPort: 1
+    StereoRCAPort: 0
     ComponentVideoPort: 0
     CompositeVideoPort: 0
     HDMIPort: 0
@@ -88,17 +88,17 @@ MonoBehaviour:
     BatteryCount: 0
     MinBatteries: 0
     MaxBatteries: 0
-    IndicatorLabel: 0
+    IndicatorLabel: 2
     CustomLabel: 
     IndicatorState: 0
     CustomQueryKey: 
     CustomData: 
-  - Type: 2
+  - Type: 1
     Count: 1
     PortPlateType: 0
-    DVIPort: 0
+    DVIPort: 1
     ParallelPort: 0
-    PS2Port: 1
+    PS2Port: 0
     RJ45Port: 1
     SerialPort: 0
     StereoRCAPort: 1

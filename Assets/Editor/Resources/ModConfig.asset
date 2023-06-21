@@ -14,7 +14,8 @@ MonoBehaviour:
   id: TipToe
   title: Tip Toe
   author: 
-  description: bruh
+  description: "Navigate from the bottom to the top of a 10x10 grid of squares while
+    avoiding fake squares.\r"
   version: 
   outputFolder: build
   previewImage: {fileID: 2800000, guid: f0928dfb2545f374ab39b0399c30b0c8, type: 3}

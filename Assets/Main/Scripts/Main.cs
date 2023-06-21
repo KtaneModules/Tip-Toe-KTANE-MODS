@@ -182,24 +182,23 @@ public class Main : MonoBehaviour
 	private void PrintGrid(bool before)
 	{
 		string[,] g1 = new string[10, 10];
-		string log = $"Grid {(before ? "before" : "after")} reaching row 6";
+		Logging($"Grid {(before ? "before" : "after")} reaching row 6");
 		for (int i = 0; i < 10; i++)
         {
-			log += "\n";
-
+			string log = "";
 			for (int j = 0; j < 10; j++)
 			{
 				string answer = Grid[i, j].Safe ? "T " : "F ";
 				log += answer;
 				g1[i, j] = answer;
 			}
+			Logging(log);
 		}
 
-		Logging(log);
 
 		if (before)
         {
-			string g2 = "FFFFFFFFFF\nFFFFFFFFFF\nTTTTTTTTTT\nFFFFFFFFFF\nFFFFFFTTTF\nTFTFFTTTTF\nTTTTTTTTTT\nFFTTTTFTFF\nTTTTTTTTTT\nFTFFFTFFTF";
+			string g2 = "FFFFFFFFFF\nFFFFFFFFFF\nTTTTTTTTTT\nFFFFFFFFFF\nTFTFFTFFFF\nTFTFFTTTTF\nTTTTTTTTTT\nTFTFFTFTFT\nTTTTTTTTTT\nFFTTFFFFFT";
 			SameGrid(g1, g2);
 		}
 	}
@@ -271,7 +270,8 @@ public class Main : MonoBehaviour
 			Grid[9, 0].Safe = true;
 		}
 
-		if (serialNumberDigits.Last() % 2 == 0)
+
+		if (int.Parse("" + serialNumber.Last()) % 2 == 0)
 		{
 			Grid[9, 1].Safe = true;
 		}
