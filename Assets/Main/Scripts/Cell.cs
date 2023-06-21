@@ -19,6 +19,7 @@ public class Cell {
     public int Heuristic { get; set; }
     public int FinalCost { get; set; }
     public int G { get; set; }
+    public TextMesh text;
 
     public Cell Parent { get; set; }
 
@@ -34,10 +35,19 @@ public class Cell {
         Button = button;
         this.white = white;
 
+        Transform transform = null;
+
         if (button != null)
         {
-            m = Button.gameObject.GetComponent<MeshRenderer>();
+            m = Button.transform.GetComponent<MeshRenderer>();
             orange = m.material;
+            transform = Button.transform.Find("Colorblind Text");
+        }
+
+
+        if (transform != null)
+        {
+            text = transform.GetComponent<TextMesh>();
         }
 
         FlickerTimes = new int[4];
@@ -53,13 +63,42 @@ public class Cell {
             Right == c;
     }
 
-    public void SetWhite(bool t)
+    public void SetWhite(bool t, bool colorBlind)
     {
         m.material = t ? white : orange;
+
+        if (colorBlind)
+        {
+            SetTextColorBlack(t);
+        }
     }
 
     public override string ToString()
     {
         return $"({Row}, {Col})";
+    }
+
+    public void ShowText(bool t)
+    {
+        if (text != null && !t)
+        {
+            text.text = "";
+        }
+    }
+
+    public void SetTextColorBlack(bool t)
+    {
+        if (t)
+        {
+            text.text = "W";
+            text.color = Color.black;
+        }
+
+
+        else
+        {
+            text.text = "O";
+            text.color = Color.white;
+        }
     }
 }

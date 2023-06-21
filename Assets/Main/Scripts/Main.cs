@@ -14,6 +14,7 @@ public class Main : MonoBehaviour
 	[SerializeField]
 	KMAudio Audio;
 
+	KMColorblindMode colorBlindScript;
 
 	[SerializeField]
 	Material white;
@@ -62,6 +63,7 @@ public class Main : MonoBehaviour
 		ModuleId = ModuleIdCounter++;
 		buttons = GetComponent<KMSelectable>().Children;
 		Grid = new Cell[10, 10];
+		colorBlindScript = GetComponent<KMColorblindMode>();
 	}
 
 	void GetEdgework()
@@ -99,7 +101,11 @@ public class Main : MonoBehaviour
 		startingMinutes = (int)Bomb.GetTime() / 60 - 1;
 		GetEdgework();
 
+
+		
 		ResetModule();
+
+		
 
 		foreach (KMSelectable s in buttons)
 		{ 
@@ -150,6 +156,8 @@ public class Main : MonoBehaviour
             {
 				flickeringCells.Add(c);
             }
+
+			c.ShowText(colorBlindScript.ColorblindModeActive);
         }
 
 		foreach (Cell c in flickeringCells)
@@ -637,9 +645,9 @@ public class Main : MonoBehaviour
 
 	IEnumerator Flicker(Cell c)
     {
-		c.SetWhite(true);
+		c.SetWhite(true, colorBlindScript.ColorblindModeActive);
 		yield return new WaitForSeconds(1f);
-		c.SetWhite(false);
+		c.SetWhite(false, colorBlindScript.ColorblindModeActive);
 	}
 
 	Cell GetCell(KMSelectable s)
