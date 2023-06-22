@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Rnd = UnityEngine.Random;
 
 public class Cell {
     public bool Safe { get; set; }
@@ -63,14 +64,22 @@ public class Cell {
             Right == c;
     }
 
-    public void SetWhite(bool t, bool colorBlind)
+    public void SetWhite(bool t, bool colorBlind, Color32 orangeColor)
     {
-        m.material = t ? white : orange;
+        m.material.color = t ? new Color32(240, 240, 240, 255) : orangeColor;
 
         if (colorBlind)
-        {
             SetTextColorBlack(t);
-        }
+    }
+
+    public void SetRed(bool t, bool colorBlind, Color32 orangeColor)
+    {
+        m.material.color = t ? new Color32(240, 20, 50, 255) : orangeColor;
+    }
+
+    public void SetGreen()
+    {
+        m.material.color = new Color32(0, (byte)Rnd.Range(230, 250), (byte)Rnd.Range(40, 90), 255);
     }
 
     public override string ToString()
