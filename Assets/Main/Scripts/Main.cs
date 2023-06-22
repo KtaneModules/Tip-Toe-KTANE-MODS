@@ -59,13 +59,22 @@ public class Main : MonoBehaviour
 	private bool ModuleSolved = false;
 	int startingMinutes;
 	int currentMinutes = -1;
+
+	private Color32[] orangeColors = new Color32[100];
+	private Coroutine[] redAnims = new Coroutine[100];
+	private List<Cell> visitedCells = new List<Cell>();
+
 	void Awake()
 	{
 		ModuleId = ModuleIdCounter++;
 		buttons = GetComponent<KMSelectable>().Children;
 		Grid = new Cell[10, 10];
 		colorBlindScript = GetComponent<KMColorblindMode>();
-	}
+		for (int i = 0; i < orangeColors.Length; i++)
+			orangeColors[i] = new Color32(255, (byte)Rnd.Range(110, 160), 0, 255);
+        for (int i = 0; i < buttons.Length; i++)
+			buttons[i].GetComponent<MeshRenderer>().material.color = orangeColors[i];
+    }
 
 	void GetEdgework()
 	{
@@ -580,6 +589,8 @@ public class Main : MonoBehaviour
         }
 		Cell c = GetCell(s);
 
+		int ix = c.Row * 10 + c.Col;
+
 		string log = $"Pressed {c}.";
 
 		//if player is not set, check to see if cell pressed is in the first row
@@ -589,7 +600,7 @@ public class Main : MonoBehaviour
 			{
 				log += " This is not in the first row. Strike!";
 				Logging(log);
-				Strike();
+				Strike(ix);
 				return;
 			}
 
@@ -598,11 +609,12 @@ public class Main : MonoBehaviour
             {
 				log += " This is not safe. Strike!";
 				Logging(log);
-				Strike();
+				Strike(ix);
 				return;
 			}
 
 			currentPos = c;
+			visitedCells.Add(c);
 			Logging(log);
 			return;
 		}
@@ -612,7 +624,7 @@ public class Main : MonoBehaviour
         {
 			log += " This is not adjacent. Strike!";
 			Logging(log);
-			Strike();
+			Strike(ix);
 			return;
 		}
 
@@ -621,10 +633,11 @@ public class Main : MonoBehaviour
 		{
 			log += " This is not safe. Strike!";
 			Logging(log);
-			Strike();
+			Strike(ix);
 			return;
 		}
 
+		visitedCells.Add(c);
 		currentPos = c;
 		Logging(log);
 
@@ -642,15 +655,23 @@ public class Main : MonoBehaviour
 		if (c.Row == 0)
         {
 			Solve();
+			Audio.PlaySoundAtTransform("SolveSound", transform);
 		}
 
 	}
 
 	IEnumerator Flicker(Cell c)
     {
-		c.SetWhite(true, colorBlindScript.ColorblindModeActive);
+		c.SetWhite(true, colorBlindScript.ColorblindModeActive, orangeColors[c.Row * 10 + c.Col]);
 		yield return new WaitForSeconds(1f);
-		c.SetWhite(false, colorBlindScript.ColorblindModeActive);
+		c.SetWhite(false, colorBlindScript.ColorblindModeActive, orangeColors[c.Row * 10 + c.Col]);
+	}
+
+	IEnumerator FlickerRed(Cell c)
+    {
+		c.SetRed(true, colorBlindScript.ColorblindModeActive, orangeColors[c.Row * 10 + c.Col]);
+		yield return new WaitForSeconds(1f);
+		c.SetRed(false, colorBlindScript.ColorblindModeActive, orangeColors[c.Row * 10 + c.Col]);
 	}
 
 	Cell GetCell(KMSelectable s)
@@ -666,9 +687,13 @@ public class Main : MonoBehaviour
 		return null;
 	}
 
-	void Strike()
+	void Strike(int ix)
 	{
+		visitedCells = new List<Cell>();
 		GetComponent<KMBombModule>().HandleStrike();
+		if (redAnims[ix] != null)
+			StopCoroutine(redAnims[ix]);
+		redAnims[ix] = StartCoroutine(FlickerRed(Grid[ix / 10, ix % 10]));
 		ResetModule();
 	}
 
@@ -676,6 +701,21 @@ public class Main : MonoBehaviour
     {
 		GetComponent<KMBombModule>().HandlePass();
 		ModuleSolved = true;
+		StartCoroutine(ShowPathToSolve());
+    }
+
+	private IEnumerator ShowPathToSolve()
+    {
+		var timeBetweenEach = 3.3f / visitedCells.Count;
+		for (int i = 0; i < visitedCells.Count; i++)
+		{
+			visitedCells[i].SetGreen();
+			yield return new WaitForSeconds(timeBetweenEach);
+		}
+		for (int i = 0; i < 10; i++)
+			for (int j = 0; j < 10; j++)
+			Grid[i, j].SetGreen();
+		yield break;
     }
 
 	int GetIndex(int num)
