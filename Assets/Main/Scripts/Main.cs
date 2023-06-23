@@ -70,7 +70,7 @@ public class Main : MonoBehaviour
 		ModuleId = ModuleIdCounter++;
 		buttons = GetComponent<KMSelectable>().Children;
 		Grid = new Cell[10, 10];
-		colorblindOn = GetComponent<KMColorblindMode>().ColorblindModeActive;
+		//colorblindOn = GetComponent<KMColorblindMode>().ColorblindModeActive;
 		for (int i = 0; i < orangeColors.Length; i++)
         {
 			orangeColors[i] = new Color32(255, (byte)Rnd.Range(110, 160), 0, 255);
