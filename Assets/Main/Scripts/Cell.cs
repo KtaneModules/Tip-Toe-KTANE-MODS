@@ -24,32 +24,46 @@ public class Cell {
 
     public Color32 White { get; private set; }
     public Color32 Orange { get; set; }
-
+    public Color32 Black { get; set; }
 
     public Cell Parent { get; set; }
 
-    private MeshRenderer mmeshRenderer;
+    private MeshRenderer meshRenderer;
+
+    private bool colorBlindOn;
 
 
-    public Cell(int row, int col, KMSelectable button)
+    public Cell(int row, int col, KMSelectable button, bool colorBlindOn)
     {
         Row = row;
         Col = col;
         Button = button;
-
+        this.colorBlindOn = colorBlindOn;
+        Black = new Color32(0, 0, 0, 1);
         Transform transform = null;
 
         if (button != null)
         {
-            mmeshRenderer = Button.transform.GetComponent<MeshRenderer>();
+            meshRenderer = Button.transform.GetComponent<MeshRenderer>();
             transform = Button.transform.Find("Colorblind Text");
         }
-
 
         if (transform != null)
         {
             text = transform.GetComponent<TextMesh>();
+
+            if (!colorBlindOn)
+            {
+                text.text = "";
+            }
+
+            else
+            {
+                text.color = new Color(0, 0, 0, 0);
+            }
         }
+
+
 
         FlickerTimes = new int[4];
         AlreadyFlickered = new bool[4];
@@ -66,31 +80,38 @@ public class Cell {
             Right == c;
     }
 
-    public IEnumerator Fade(float time, Color targetColor, bool fadeBack)
+    public IEnumerator Fade(float time, Color targetColor, Color textTargetColor, bool fadeBack)
     {
         float elaspedTime = 0f;
 
-        Color c = mmeshRenderer.material.color;
+        Color c = this.meshRenderer.material.color;
+        Color textC = new Color(); //stop yelling at me
+        if (text != null)
+        {
+            textC = text.color;
+        }
 
         while (elaspedTime < time)
         {
-            SetMaterialColor(Color.Lerp(c, targetColor, elaspedTime/time));
+            float t = elaspedTime / time;
+            SetMaterialColor(Color.Lerp(c, targetColor, t));
+
+            if (text != null && colorBlindOn)
+            {
+                SetTextColor(Color.Lerp(textC, textTargetColor, t));
+            }
+
             elaspedTime += Time.deltaTime;
             yield return null;
         }
 
         if (fadeBack)
         {
-            yield return Fade(time, Orange, false);
+            yield return Fade(time, Orange, textC, false);
         }
     }
 
-    public void FadeWhite()
-    {
-
-    }
-
-    public void SetRed(bool t, bool colorBlind, Color32 orangeColor)
+    public void SetRed(bool t, Color32 orangeColor)
     {
         SetMaterialColor(t ? new Color32(240, 20, 50, 255) : orangeColor);
     }
@@ -105,32 +126,17 @@ public class Cell {
         return $"({10 - Row}, {(Col + 1) % 10})";
     }
 
-    public void ShowText(bool t)
+    private void SetTextColor(Color32 color)
     {
-        if (text != null && !t)
+        if (text != null)
         {
-            text.text = "";
-        }
-    }
-
-    public void SetTextColorBlack(bool t)
-    {
-        if (t)
-        {
-            text.text = "W";
-            text.color = Color.black;
-        }
-
-
-        else
-        {
-            text.text = "O";
-            text.color = Color.white;
+            text.color = color;
         }
     }
 
     void SetMaterialColor(Color c)
     {
-        mmeshRenderer.material.color = c;
+        meshRenderer.material.color = c;
     }
+
 }

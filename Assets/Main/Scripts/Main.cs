@@ -129,7 +129,7 @@ public class Main : MonoBehaviour
 		{
 			int row = i / 10;
 			int col = i % 10;
-			Grid[row, col] = new Cell(row, col, buttons[i]);
+			Grid[row, col] = new Cell(row, col, buttons[i], colorBlindScript.ColorblindModeActive);
 			Color color = orangeColors[i];
 			buttons[i].GetComponent<MeshRenderer>().material.color = color;
 			Grid[row, col].Orange = color;
@@ -152,7 +152,7 @@ public class Main : MonoBehaviour
         }
 
 		flickeringCells = new List<Cell>();
-		currentPos = new Cell(-1, -1, null);
+		currentPos = new Cell(-1, -1, null, colorBlindScript.ColorblindModeActive);
 		row6CellSafe = false;
 		SetSafeRow1(); //9
 		SetConditionTrue(8); //8
@@ -170,8 +170,6 @@ public class Main : MonoBehaviour
             {
 				flickeringCells.Add(c);
             }
-
-			c.ShowText(colorBlindScript.ColorblindModeActive);
         }
 
 		foreach (Cell c in flickeringCells)
@@ -665,14 +663,14 @@ public class Main : MonoBehaviour
 
 	void FadeWhite(Cell c)
     {
-		StartCoroutine(c.Fade(1, c.White, true));
+		StartCoroutine(c.Fade(1, c.White, Color.black, true));
 	}
 
 	IEnumerator FlickerRed(Cell c)
     {
-		c.SetRed(true, colorBlindScript.ColorblindModeActive, orangeColors[c.Row * 10 + c.Col]);
+		c.SetRed(true, orangeColors[c.Row * 10 + c.Col]);
 		yield return new WaitForSeconds(1f);
-		c.SetRed(false, colorBlindScript.ColorblindModeActive, orangeColors[c.Row * 10 + c.Col]);
+		c.SetRed(false, orangeColors[c.Row * 10 + c.Col]);
 	}
 
 	Cell GetCell(KMSelectable s)
@@ -712,8 +710,7 @@ public class Main : MonoBehaviour
     {
 		falling = true;
 		Cell c = Grid[ix / 10, ix % 10];
-		Color trans = Color.black;
-		StartCoroutine(c.Fade(fallingClip.length, trans, false));
+		StartCoroutine(c.Fade(fallingClip.length, Color.black, Color.white, false));
 		Audio.PlaySoundAtTransform(fallingClip.name, transform);
 		yield return new WaitForSeconds(fallingClip.length);
 		GetComponent<KMBombModule>().HandleStrike();
