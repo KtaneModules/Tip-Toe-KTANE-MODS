@@ -334,7 +334,7 @@ public class Main : MonoBehaviour
 
 		foreach (char c in serialNumber)
 		{
-			serialNumberAlphaDigits.Add(Char.IsDigit(c) ? int.Parse("" + c) : (c - 64) % 10);
+			serialNumberAlphaDigits.Add(Char.IsDigit(c) ? int.Parse("" + c) : c - 64);
 		}
 
 		List<int> list = serialNumberAlphaDigits.ToList();
@@ -350,7 +350,8 @@ public class Main : MonoBehaviour
 
 		for (int i = 0; i < list.Count; i++)
         {
-			Grid[7, GetIndex(list[i])].Safe = true;
+			int num = serialNumberAlphaDigits[i] % 10;
+			Grid[7, GetIndex(num)].Safe = true;
         }
 	}
 
