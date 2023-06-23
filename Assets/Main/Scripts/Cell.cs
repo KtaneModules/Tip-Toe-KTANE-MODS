@@ -121,6 +121,10 @@ public class Cell {
     public void SetGreen()
     {
         SetMaterialColor(new Color32(0, (byte)Rnd.Range(230, 250), (byte)Rnd.Range(40, 90), 255));
+        if (colorBlindOn && text != null)
+        {
+            text.text = "";
+        }
     }
 
     public override string ToString()
