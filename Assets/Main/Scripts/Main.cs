@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEngine;
 using KModkit;
 using Rnd = UnityEngine.Random;
@@ -16,8 +15,6 @@ public class Main : MonoBehaviour
 
 	KMColorblindMode colorBlindScript;
 
-	[SerializeField]
-	Material white;
 	#region Edgework
 	int psPortNum;
 	int rcaPortNum;
@@ -60,6 +57,11 @@ public class Main : MonoBehaviour
 	int startingMinutes;
 	int currentMinutes = -1;
 
+	[SerializeField]
+	AudioClip fallingClip;
+
+	bool falling; //if the person got a strike and the falling sound effect is still playing
+
 	private Color32[] orangeColors = new Color32[100];
 	private Coroutine[] redAnims = new Coroutine[100];
 	private List<Cell> visitedCells = new List<Cell>();
@@ -71,10 +73,10 @@ public class Main : MonoBehaviour
 		Grid = new Cell[10, 10];
 		colorBlindScript = GetComponent<KMColorblindMode>();
 		for (int i = 0; i < orangeColors.Length; i++)
+        {
 			orangeColors[i] = new Color32(255, (byte)Rnd.Range(110, 160), 0, 255);
-        for (int i = 0; i < buttons.Length; i++)
-			buttons[i].GetComponent<MeshRenderer>().material.color = orangeColors[i];
-    }
+		}
+	}
 
 	void GetEdgework()
 	{
@@ -111,11 +113,7 @@ public class Main : MonoBehaviour
 		startingMinutes = (int)Bomb.GetTime() / 60 - 1;
 		GetEdgework();
 
-
-		
 		ResetModule();
-
-		
 
 		foreach (KMSelectable s in buttons)
 		{ 
@@ -131,7 +129,11 @@ public class Main : MonoBehaviour
 		{
 			int row = i / 10;
 			int col = i % 10;
-			Grid[row, col] = new Cell(row, col, buttons[i], white);
+			Grid[row, col] = new Cell(row, col, buttons[i]);
+			Color color = orangeColors[i];
+			buttons[i].GetComponent<MeshRenderer>().material.color = color;
+			Grid[row, col].Orange = color;
+
 		}
 
 		for (int i = 0; i < 10; i++)
@@ -139,6 +141,8 @@ public class Main : MonoBehaviour
 			for (int j = 0; j < 10; j++)
             {
 				Cell c = Grid[i, j];
+
+				
 
 				c.Up = i == 0 ? null : Grid[i - 1, j];
 				c.Down = i == 9 ? null : Grid[i + 1, j];
@@ -148,7 +152,7 @@ public class Main : MonoBehaviour
         }
 
 		flickeringCells = new List<Cell>();
-		currentPos = new Cell(-1, -1, null, null);
+		currentPos = new Cell(-1, -1, null);
 		row6CellSafe = false;
 		SetSafeRow1(); //9
 		SetConditionTrue(8); //8
@@ -187,32 +191,34 @@ public class Main : MonoBehaviour
 		//Debug.Log($"Flickering at {cell.Row},{cell.Col}");
 		//Debug.Log($"Times at {string.Join(" ", cell.FlickerTimes.Select(x => "" + x).ToArray())}");
 
+		falling = false;
 	}
 
 	private void PrintGrid(bool before)
 	{
 		string[,] g1 = new string[10, 10];
-		Logging($"Grid {(before ? "before" : "after")} reaching row 6");
+		string log = $"Grid {(before ? "before" : "after")} reaching row 6 ";
 		for (int i = 0; i < 10; i++)
         {
-			string log = "";
 			for (int j = 0; j < 10; j++)
 			{
 				string answer = Grid[i, j].Safe ? "T " : "F ";
 				log += answer;
 				g1[i, j] = answer;
 			}
-			Logging(log);
 		}
 
+		Logging(log);
 
+		/*
 		if (before)
         {
 			string g2 = "FFFFFFFFFF\nFFFFFFFFFF\nTTTTTTTTTT\nFFFFFFFFFF\nTFTFFTFFFF\nTFTFFTTTTF\nTTTTTTTTTT\nTFTFFTFTFT\nTTTTTTTTTT\nFFTTFFFFFT";
 			SameGrid(g1, g2);
-		}
+		}*/
+
 	}
-		
+
 
 	void SameGrid(string[,] g1, string temp)
 	{
@@ -230,9 +236,6 @@ public class Main : MonoBehaviour
 		}
 	}
 
-
-
-
 	void Update()
 	{
 		if (ModuleSolved)
@@ -243,7 +246,7 @@ public class Main : MonoBehaviour
 		int minutes = (int)Bomb.GetTime() / 60;
 		int seconds = (int)Bomb.GetTime() % 60;
 
-		if (minutes >= startingMinutes)
+		if (minutes > startingMinutes)
         {
 			return;
         }
@@ -266,7 +269,7 @@ public class Main : MonoBehaviour
 			{
 				if (!c.AlreadyFlickered[i] && c.FlickerTimes[i] == seconds)
                 {
-					StartCoroutine(Flicker(c));
+					FadeWhite(c);
 					c.AlreadyFlickered[i] = true;
 				}
 			}
@@ -583,7 +586,8 @@ public class Main : MonoBehaviour
 	void KeypadPress(KMSelectable s)
 	{
 		s.AddInteractionPunch(.5f);
-		if (ModuleSolved)
+
+		if (ModuleSolved || falling)
         {
 			return;
         }
@@ -600,7 +604,7 @@ public class Main : MonoBehaviour
 			{
 				log += " This is not in the first row. Strike!";
 				Logging(log);
-				Strike(ix);
+				Strike(ix, false);
 				return;
 			}
 
@@ -609,7 +613,7 @@ public class Main : MonoBehaviour
             {
 				log += " This is not safe. Strike!";
 				Logging(log);
-				Strike(ix);
+				Strike(ix, true);
 				return;
 			}
 
@@ -624,7 +628,7 @@ public class Main : MonoBehaviour
         {
 			log += " This is not adjacent. Strike!";
 			Logging(log);
-			Strike(ix);
+			Strike(ix, false);
 			return;
 		}
 
@@ -633,7 +637,7 @@ public class Main : MonoBehaviour
 		{
 			log += " This is not safe. Strike!";
 			Logging(log);
-			Strike(ix);
+			Strike(ix, true);
 			return;
 		}
 
@@ -655,16 +659,13 @@ public class Main : MonoBehaviour
 		if (c.Row == 0)
         {
 			Solve();
-			Audio.PlaySoundAtTransform("SolveSound", transform);
 		}
 
 	}
 
-	IEnumerator Flicker(Cell c)
+	void FadeWhite(Cell c)
     {
-		c.SetWhite(true, colorBlindScript.ColorblindModeActive, orangeColors[c.Row * 10 + c.Col]);
-		yield return new WaitForSeconds(1f);
-		c.SetWhite(false, colorBlindScript.ColorblindModeActive, orangeColors[c.Row * 10 + c.Col]);
+		StartCoroutine(c.Fade(1, c.White, true));
 	}
 
 	IEnumerator FlickerRed(Cell c)
@@ -687,22 +688,45 @@ public class Main : MonoBehaviour
 		return null;
 	}
 
-	void Strike(int ix)
+	void Strike(int ix, bool adjacent)
 	{
 		visitedCells = new List<Cell>();
+
+		if (adjacent)
+		{
+			StartCoroutine(FallStrike(ix));
+			
+		}
+
+		else
+		{
+			if (redAnims[ix] != null)
+				StopCoroutine(redAnims[ix]);
+			redAnims[ix] = StartCoroutine(FlickerRed(Grid[ix / 10, ix % 10]));
+			ResetModule();
+			GetComponent<KMBombModule>().HandleStrike();
+		}
+	}
+
+	IEnumerator FallStrike(int ix)
+    {
+		falling = true;
+		Cell c = Grid[ix / 10, ix % 10];
+		Color trans = Color.black;
+		StartCoroutine(c.Fade(fallingClip.length, trans, false));
+		Audio.PlaySoundAtTransform(fallingClip.name, transform);
+		yield return new WaitForSeconds(fallingClip.length);
 		GetComponent<KMBombModule>().HandleStrike();
-		if (redAnims[ix] != null)
-			StopCoroutine(redAnims[ix]);
-		redAnims[ix] = StartCoroutine(FlickerRed(Grid[ix / 10, ix % 10]));
 		ResetModule();
 	}
 
 	void Solve()
     {
+		Audio.PlaySoundAtTransform("SolveSound", transform);
+		StartCoroutine(ShowPathToSolve());
 		GetComponent<KMBombModule>().HandlePass();
 		ModuleSolved = true;
-		StartCoroutine(ShowPathToSolve());
-    }
+	}
 
 	private IEnumerator ShowPathToSolve()
     {

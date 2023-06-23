@@ -22,26 +22,26 @@ public class Cell {
     public int G { get; set; }
     public TextMesh text;
 
+    public Color32 White { get; private set; }
+    public Color32 Orange { get; set; }
+
+
     public Cell Parent { get; set; }
 
-    private MeshRenderer m;
-    Material white;
-    Material orange;
+    private MeshRenderer mmeshRenderer;
 
 
-    public Cell(int row, int col, KMSelectable button, Material white)
+    public Cell(int row, int col, KMSelectable button)
     {
         Row = row;
         Col = col;
         Button = button;
-        this.white = white;
 
         Transform transform = null;
 
         if (button != null)
         {
-            m = Button.transform.GetComponent<MeshRenderer>();
-            orange = m.material;
+            mmeshRenderer = Button.transform.GetComponent<MeshRenderer>();
             transform = Button.transform.Find("Colorblind Text");
         }
 
@@ -53,6 +53,8 @@ public class Cell {
 
         FlickerTimes = new int[4];
         AlreadyFlickered = new bool[4];
+
+        White = new Color32(240, 240, 240, 255);
     }
 
     public bool Adjacent(Cell c)
@@ -64,22 +66,38 @@ public class Cell {
             Right == c;
     }
 
-    public void SetWhite(bool t, bool colorBlind, Color32 orangeColor)
+    public IEnumerator Fade(float time, Color targetColor, bool fadeBack)
     {
-        m.material.color = t ? new Color32(240, 240, 240, 255) : orangeColor;
+        float elaspedTime = 0f;
 
-        if (colorBlind)
-            SetTextColorBlack(t);
+        Color c = mmeshRenderer.material.color;
+
+        while (elaspedTime < time)
+        {
+            SetMaterialColor(Color.Lerp(c, targetColor, elaspedTime/time));
+            elaspedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        if (fadeBack)
+        {
+            yield return Fade(time, Orange, false);
+        }
+    }
+
+    public void FadeWhite()
+    {
+
     }
 
     public void SetRed(bool t, bool colorBlind, Color32 orangeColor)
     {
-        m.material.color = t ? new Color32(240, 20, 50, 255) : orangeColor;
+        SetMaterialColor(t ? new Color32(240, 20, 50, 255) : orangeColor);
     }
 
     public void SetGreen()
     {
-        m.material.color = new Color32(0, (byte)Rnd.Range(230, 250), (byte)Rnd.Range(40, 90), 255);
+        SetMaterialColor(new Color32(0, (byte)Rnd.Range(230, 250), (byte)Rnd.Range(40, 90), 255));
     }
 
     public override string ToString()
@@ -109,5 +127,10 @@ public class Cell {
             text.text = "O";
             text.color = Color.white;
         }
+    }
+
+    void SetMaterialColor(Color c)
+    {
+        mmeshRenderer.material.color = c;
     }
 }
