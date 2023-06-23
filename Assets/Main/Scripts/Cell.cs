@@ -30,7 +30,7 @@ public class Cell {
 
     private MeshRenderer meshRenderer;
 
-    private bool colorBlindOn;
+    private bool colorBlindOn; //this is going to always be false cuz module idea person doesn't want it, but i dont want to delete the code that does it
 
 
     public Cell(int row, int col, KMSelectable button, bool colorBlindOn)
@@ -64,7 +64,6 @@ public class Cell {
         }
 
 
-
         FlickerTimes = new int[4];
         AlreadyFlickered = new bool[4];
 
@@ -84,7 +83,7 @@ public class Cell {
     {
         float elaspedTime = 0f;
 
-        Color c = this.meshRenderer.material.color;
+        Color c = meshRenderer.material.color;
         Color textC = new Color(); //stop yelling at me
         if (text != null)
         {
@@ -104,6 +103,9 @@ public class Cell {
             elaspedTime += Time.deltaTime;
             yield return null;
         }
+
+        SetMaterialColor(targetColor);
+        SetTextColor(textTargetColor);
 
         if (fadeBack)
         {

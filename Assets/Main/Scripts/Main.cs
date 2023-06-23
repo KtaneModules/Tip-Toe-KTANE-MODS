@@ -13,7 +13,7 @@ public class Main : MonoBehaviour
 	[SerializeField]
 	KMAudio Audio;
 
-	KMColorblindMode colorBlindScript;
+	bool colorblindOn = false; //dont want to delete code that does this
 
 	#region Edgework
 	int psPortNum;
@@ -63,7 +63,6 @@ public class Main : MonoBehaviour
 	bool falling; //if the person got a strike and the falling sound effect is still playing
 
 	private Color32[] orangeColors = new Color32[100];
-	private Coroutine[] redAnims = new Coroutine[100];
 	private List<Cell> visitedCells = new List<Cell>();
 
 	void Awake()
@@ -71,7 +70,7 @@ public class Main : MonoBehaviour
 		ModuleId = ModuleIdCounter++;
 		buttons = GetComponent<KMSelectable>().Children;
 		Grid = new Cell[10, 10];
-		colorBlindScript = GetComponent<KMColorblindMode>();
+		colorblindOn = GetComponent<KMColorblindMode>().ColorblindModeActive;
 		for (int i = 0; i < orangeColors.Length; i++)
         {
 			orangeColors[i] = new Color32(255, (byte)Rnd.Range(110, 160), 0, 255);
@@ -129,7 +128,7 @@ public class Main : MonoBehaviour
 		{
 			int row = i / 10;
 			int col = i % 10;
-			Grid[row, col] = new Cell(row, col, buttons[i], colorBlindScript.ColorblindModeActive);
+			Grid[row, col] = new Cell(row, col, buttons[i], colorblindOn);
 			Color color = orangeColors[i];
 			buttons[i].GetComponent<MeshRenderer>().material.color = color;
 			Grid[row, col].Orange = color;
@@ -152,7 +151,7 @@ public class Main : MonoBehaviour
         }
 
 		flickeringCells = new List<Cell>();
-		currentPos = new Cell(-1, -1, null, colorBlindScript.ColorblindModeActive);
+		currentPos = new Cell(-1, -1, null, colorblindOn);
 		row6CellSafe = false;
 		SetSafeRow1(); //9
 		SetConditionTrue(8); //8
@@ -698,11 +697,7 @@ public class Main : MonoBehaviour
 
 		else
 		{
-			if (redAnims[ix] != null)
-				StopCoroutine(redAnims[ix]);
-			redAnims[ix] = StartCoroutine(FlickerRed(Grid[ix / 10, ix % 10]));
-			ResetModule();
-			GetComponent<KMBombModule>().HandleStrike();
+			StartCoroutine(RedStrike(ix));
 		}
 	}
 
@@ -713,6 +708,14 @@ public class Main : MonoBehaviour
 		StartCoroutine(c.Fade(fallingClip.length, Color.black, Color.white, false));
 		Audio.PlaySoundAtTransform(fallingClip.name, transform);
 		yield return new WaitForSeconds(fallingClip.length);
+		GetComponent<KMBombModule>().HandleStrike();
+		ResetModule();
+	}
+
+	IEnumerator RedStrike(int ix)
+    {
+		falling = true;
+		yield return FlickerRed(Grid[ix / 10, ix % 10]);
 		GetComponent<KMBombModule>().HandleStrike();
 		ResetModule();
 	}
