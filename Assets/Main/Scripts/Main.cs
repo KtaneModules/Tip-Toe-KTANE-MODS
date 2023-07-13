@@ -45,6 +45,7 @@ public class Main : MonoBehaviour
 
 	Cell currentPos;
 
+	bool row1CellSafe;
 	bool row6CellSafe;
 	List<int> row9Safe;
 
@@ -119,7 +120,7 @@ public class Main : MonoBehaviour
 			s.OnInteract += delegate () { KeypadPress(s); return false; };
 		}
 
-		PrintGrid(true, 6);
+		PrintGrid(true, 1);
 	}
 
 	void ResetModule()
@@ -153,6 +154,7 @@ public class Main : MonoBehaviour
 		flickeringCells = new List<Cell>();
 		currentPos = new Cell(-1, -1, null, colorblindOn);
 		row6CellSafe = false;
+		row1CellSafe = false;
 		SetSafeRow1(); //9
 		SetConditionTrue(8); //8
 		SetSafeRow3(); //7
@@ -194,7 +196,7 @@ public class Main : MonoBehaviour
 	private void PrintGrid(bool before, int rowNum)
 	{
 		string[,] g1 = new string[10, 10];
-		string log = $"Grid {(before ? "before" : "after")} reaching row ${rowNum}:\n";
+		string log = $"Grid {(before ? "before" : "after")} reaching row {rowNum}:\n";
 		for (int i = 0; i < 10; i++)
         {
 			for (int j = 0; j < 10; j++)
@@ -626,7 +628,13 @@ public class Main : MonoBehaviour
 			currentPos = c;
 			visitedCells.Add(c);
 			Logging(log);
+
+			//set all other squares in the first row as safe
+			row1CellSafe = true;
+			SetConditionTrue(9);
+			PrintGrid(false, 1);
 			return;
+
 		}
 
 		//check to see if the cell is orthongal from current pos
@@ -646,6 +654,8 @@ public class Main : MonoBehaviour
 			Strike(ix, true);
 			return;
 		}
+
+		Debug.Log("Row " + c.Row);
 
 		visitedCells.Add(c);
 		currentPos = c;
