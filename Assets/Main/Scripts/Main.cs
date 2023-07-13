@@ -13,6 +13,8 @@ public class Main : MonoBehaviour
 	[SerializeField]
 	KMAudio Audio;
 
+	bool zenModeActive;
+
 	bool colorblindOn = false; //dont want to delete code that does this
 
 	#region Edgework
@@ -247,7 +249,7 @@ public class Main : MonoBehaviour
 		int minutes = (int)Bomb.GetTime() / 60;
 		int seconds = (int)Bomb.GetTime() % 60;
 
-		if (minutes > startingMinutes)
+		if (minutes >= startingMinutes)
         {
 			return;
         }
