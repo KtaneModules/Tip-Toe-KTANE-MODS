@@ -119,7 +119,7 @@ public class Main : MonoBehaviour
 			s.OnInteract += delegate () { KeypadPress(s); return false; };
 		}
 
-		PrintGrid(true);
+		PrintGrid(true, 6);
 	}
 
 	void ResetModule()
@@ -191,10 +191,10 @@ public class Main : MonoBehaviour
 		falling = false;
 	}
 
-	private void PrintGrid(bool before)
+	private void PrintGrid(bool before, int rowNum)
 	{
 		string[,] g1 = new string[10, 10];
-		string log = $"Grid {(before ? "before" : "after")} reaching row 6 ";
+		string log = $"Grid {(before ? "before" : "after")} reaching row ${rowNum}:\n";
 		for (int i = 0; i < 10; i++)
         {
 			for (int j = 0; j < 10; j++)
@@ -203,6 +203,8 @@ public class Main : MonoBehaviour
 				log += answer;
 				g1[i, j] = answer;
 			}
+
+			log += "\n";
 		}
 
 		Logging(log);
@@ -650,7 +652,7 @@ public class Main : MonoBehaviour
 			SetConditionTrue(4);
 			SetSafeRow7();
 			
-			PrintGrid(false);
+			PrintGrid(false, 6);
 		}
 
 		//current cell is in 10th row solve module
