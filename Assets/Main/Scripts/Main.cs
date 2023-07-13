@@ -339,22 +339,28 @@ public class Main : MonoBehaviour
 			serialNumberAlphaDigits.Add(Char.IsDigit(c) ? int.Parse("" + c) : c - 64);
 		}
 
-		List<int> list = serialNumberAlphaDigits.ToList();
+		List<int> list = serialNumberAlphaDigits.Select(x => x % 10).ToList();
+
+		Debug.Log(string.Join(", ", list.Select(x => x.ToString()).ToArray()));
 
 		if (list.Distinct().Count() == list.Count)
 		{
 			list.RemoveAt(5);
+			Debug.Log("There are 6 distince numbers");
 		}
 		else
         {
 			list = list.Distinct().ToList();
 		}
 
+		Debug.Log(string.Join(", ", list.Select(x => x.ToString()).ToArray()));
+
 		for (int i = 0; i < list.Count; i++)
         {
-			int num = serialNumberAlphaDigits[i] % 10;
-			Grid[7, GetIndex(num)].Safe = true;
+			Grid[7, GetIndex(list[i])].Safe = true;
         }
+
+
 	}
 
 	void SetSafeRow5()
