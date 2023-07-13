@@ -122,7 +122,7 @@ public class Main : MonoBehaviour
 			s.OnInteract += delegate () { KeypadPress(s); return false; };
 		}
 
-		PrintGrid(true, 1);
+		PrintGrid(true, 6);
 	}
 
 	void ResetModule()
@@ -631,21 +631,8 @@ public class Main : MonoBehaviour
 			visitedCells.Add(c);
 			Logging(log);
 
-			//set all other squares in the first row as safe
-			row1CellSafe = true;
-			SetConditionTrue(9);
-			PrintGrid(false, 1);
 			return;
 
-		}
-
-		//check to see if the cell is orthongal from current pos
-		if (!currentPos.Adjacent(c))
-        {
-			log += " This is not adjacent. Strike!";
-			Logging(log);
-			Strike(ix, false);
-			return;
 		}
 
 		//check cell is safe
@@ -657,7 +644,23 @@ public class Main : MonoBehaviour
 			return;
 		}
 
-		Debug.Log("Row " + c.Row);
+		//if the pressed square is in the first row, and the player is in the first row, then it's valid
+		if (currentPos.Row == 9 && c.Row == 9)
+        {
+			visitedCells.Add(c);
+			currentPos = c;
+			Logging(log);
+			return;
+		}
+
+		//check to see if the cell is orthongal from current pos
+		if (!currentPos.Adjacent(c))
+        {
+			log += " This is not adjacent. Strike!";
+			Logging(log);
+			Strike(ix, false);
+			return;
+		}
 
 		visitedCells.Add(c);
 		currentPos = c;
