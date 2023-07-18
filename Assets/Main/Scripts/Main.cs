@@ -13,7 +13,7 @@ public class Main : MonoBehaviour
 	[SerializeField]
 	KMAudio Audio;
 
-	bool zenModeActive;
+	private bool ZenModeActive;
 
 	bool colorblindOn = false; //dont want to delete code that does this
 
@@ -112,7 +112,18 @@ public class Main : MonoBehaviour
 
 	void Start()
 	{
-		startingMinutes = (int)Bomb.GetTime() / 60 - 1;
+		startingMinutes = (int)Bomb.GetTime() / 60;
+
+		if (ZenModeActive)
+        {
+			startingMinutes++;
+        }
+
+		else
+        {
+			startingMinutes--;
+        }
+
 		GetEdgework();
 
 		ResetModule();
@@ -249,20 +260,43 @@ public class Main : MonoBehaviour
 		int minutes = (int)Bomb.GetTime() / 60;
 		int seconds = (int)Bomb.GetTime() % 60;
 
-		if (minutes >= startingMinutes)
+		if (ZenModeActive)
         {
-			return;
-        }
-
-		if (currentMinutes == -1 || currentMinutes > minutes)
-        {
-			currentMinutes = minutes; 
-			foreach (Cell c in flickeringCells)
+			if (minutes <= startingMinutes)
             {
-				for (int i = 0; i < c.AlreadyFlickered.Length; i++)
-                {
-					c.AlreadyFlickered[i] = false;
-                }
+				return;
+            }
+
+			if (currentMinutes == -1 || currentMinutes < minutes)
+			{
+				currentMinutes = minutes;
+				foreach (Cell c in flickeringCells)
+				{
+					for (int i = 0; i < c.AlreadyFlickered.Length; i++)
+					{
+						c.AlreadyFlickered[i] = false;
+					}
+				}
+			}
+		}
+
+		else if (!ZenModeActive)
+        {
+			if (minutes >= startingMinutes)
+			{
+				return;
+			}
+
+			if (currentMinutes == -1 || currentMinutes > minutes)
+			{
+				currentMinutes = minutes;
+				foreach (Cell c in flickeringCells)
+				{
+					for (int i = 0; i < c.AlreadyFlickered.Length; i++)
+					{
+						c.AlreadyFlickered[i] = false;
+					}
+				}
 			}
 		}
 
@@ -345,8 +379,6 @@ public class Main : MonoBehaviour
 
 		List<int> list = serialNumberAlphaDigits.Select(x => x % 10).ToList();
 
-		Debug.Log(string.Join(", ", list.Select(x => x.ToString()).ToArray()));
-
 		if (list.Distinct().Count() == list.Count)
 		{
 			list.RemoveAt(5);
@@ -363,8 +395,6 @@ public class Main : MonoBehaviour
         {
 			Grid[7, GetIndex(list[i])].Safe = true;
         }
-
-
 	}
 
 	void SetSafeRow5()
@@ -822,18 +852,53 @@ public class Main : MonoBehaviour
 				yield return "sendtochaterror Commands contains characters that are not numbers.";
 				yield break;
 			}
-			else if(num < 0 || num > 9)
-            {
-				yield return "sendtochaterror Commands contains numbers that are less than 0 or greater than 9.";
-				yield break;
-			}
+		}
+		int row = int.Parse(commands[0]);
+		int col = int.Parse(commands[1]);
+
+		if (row < 1 || row > 10)
+        {
+			yield return "sendtochaterror Row needs to be bewtween 1 and 10 inclusively.";
+			yield break;
 		}
 
-		int row = int.Parse(commands[0]) - 1 == -1 ? 9 : int.Parse(commands[0]) - 1;
-		int col = int.Parse(commands[1]) - 1 == -1 ? 9 : int.Parse(commands[1]) - 1;
+		if (col < 0 || col > 9)
+		{
+			yield return "sendtochaterror Column needs to be bewtween 0 and 9 inclusively.";
+			yield break;
+		}
 
-		KeypadPress(Grid[row, col].Button);
+		Cell c = FindCellToPress(row, col);
+
+		if (c == null)
+        {
+			yield return "sendtochaterror Could not process command. Please contact developer";
+			yield break;
+		}
+
+		else
+        {
+			KeypadPress(c.Button);
+		}
 	}
+
+	Cell FindCellToPress(int row, int col)
+    {
+		foreach (Cell c in Grid)
+        {
+			string[] s = c.ToString().Replace("(","").Replace(")", "").Split(',');
+
+			s[0] = s[0].Trim();
+			s[1] = s[1].Trim();
+
+			if ("" + row == s[0] && "" + col == s[1])
+            {
+				return c;
+            }
+        }
+
+		return null;
+    }
 
 	IEnumerator TwitchHandleForcedSolve()
 	{
