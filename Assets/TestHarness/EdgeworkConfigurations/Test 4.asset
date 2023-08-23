@@ -123,8 +123,8 @@ MonoBehaviour:
     Count: 1
     PortPlateType: 0
     DVIPort: 0
-    ParallelPort: 1
-    PS2Port: 0
+    ParallelPort: 0
+    PS2Port: 1
     RJ45Port: 0
     SerialPort: 0
     StereoRCAPort: 0
