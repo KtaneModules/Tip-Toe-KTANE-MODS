@@ -429,10 +429,12 @@ public class Main : MonoBehaviour
 
 		row6List = new List<KeyValuePair<string, HighLow>>();
 
-		if (list.Count == 0)
+        Debug.Log(serialNumberDigits);
+
+        if (list.Count == 0)
 		{
 			Grid[5, 0].Safe = Grid[5, 9].Safe = true;
-			row6List.Add(new KeyValuePair<string, HighLow>("NONE", new HighLow(0, 9)));
+			row6List.Add(new KeyValuePair<string, HighLow>("NONE", new HighLow(9, 0)));
 		}
 
 		else
@@ -449,8 +451,10 @@ public class Main : MonoBehaviour
 							Grid[5, GetIndex(num)].Safe = true;
 						}
 
-						high = GetIndex(serialNumberDigits.Last());
-						low = GetIndex(serialNumberDigits.First());
+						int[] noZeros = serialNumberDigits.Where(x => x != 0).ToArray();
+
+						high = serialNumberDigits.Contains(0) ? 9 : GetIndex(serialNumberDigits.Max());
+						low = serialNumberDigits.Contains(1) ? 0 : GetIndex(noZeros.Min());
 						break;
 
 					case "RCA":
