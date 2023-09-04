@@ -5,6 +5,8 @@ using System.Linq;
 using UnityEngine;
 using KModkit;
 using Rnd = UnityEngine.Random;
+using NUnit.Framework.Constraints;
+using static UnityEditor.Experimental.Build.AssetBundle.BuildCommandSet;
 
 public class Main : MonoBehaviour
 {
@@ -67,7 +69,6 @@ public class Main : MonoBehaviour
 
 	private Color32[] orangeColors = new Color32[100];
 	private List<Cell> visitedCells = new List<Cell>();
-
 	void Awake()
 	{
 		ModuleId = ModuleIdCounter++;
@@ -389,8 +390,6 @@ public class Main : MonoBehaviour
 			list = list.Distinct().ToList();
 		}
 
-		Debug.Log(string.Join(", ", list.Select(x => x.ToString()).ToArray()));
-
 		for (int i = 0; i < list.Count; i++)
         {
 			Grid[7, GetIndex(list[i])].Safe = true;
@@ -428,8 +427,6 @@ public class Main : MonoBehaviour
 		}
 
 		row6List = new List<KeyValuePair<string, HighLow>>();
-
-        Debug.Log(serialNumberDigits);
 
         if (list.Count == 0)
 		{
@@ -767,7 +764,7 @@ public class Main : MonoBehaviour
 		Audio.PlaySoundAtTransform(fallingClip.name, transform);
 		yield return new WaitForSeconds(fallingClip.length);
 		GetComponent<KMBombModule>().HandleStrike();
-		ResetModule();
+        ResetModule();
 	}
 
 	IEnumerator RedStrike(int ix)
@@ -775,7 +772,7 @@ public class Main : MonoBehaviour
 		falling = true;
 		yield return FlickerRed(Grid[ix / 10, ix % 10]);
 		GetComponent<KMBombModule>().HandleStrike();
-		ResetModule();
+        ResetModule();
 	}
 
 	void Solve()
@@ -831,59 +828,99 @@ public class Main : MonoBehaviour
 	}
 
 #pragma warning disable 414
-	private readonly string TwitchHelpMessage = @"Use `!{0} row col` to press the button at that location. Only can process one press per command";
+	private readonly string TwitchHelpMessage = @"Use `!{0} row col` to press the button at that location. Tiles can be chained via commas. EX: `1 1, 1 2` ";
 #pragma warning restore 414
 
 	IEnumerator ProcessTwitchCommand(string Command)
 	{
-		string[] commands = Command.Trim().Split(' ');
+        string[] commands = Command.Trim().Split(',');
+		commands = commands.Select(x => x.Trim()).ToArray();
+		
+		Debug.Log("Commands: " + commands.Join(", "));
+
+		string message = ValidCommands(commands);
+
+		if (message != "")
+		{
+			yield return message;
+			yield break;
+        }
+        else
+        {
+			for (int i = 0; i < commands.Length; i++)
+			{
+				string command = commands[i];
+				string previousCommand = i == 0 ? null : commands[i - 1];
+
+                Cell c = FindCellToPress(int.Parse("" + command[0]), int.Parse("" + command[2]));
+                KeypadPress(c.Button);
+
+				if (!c.Safe)
+				{
+                    if ((previousCommand == null || ManhattenDistance(command, previousCommand) == 1))
+                    {
+                        yield return new WaitForSeconds(fallingClip.length); //wait for long strike sound
+                    }
+
+                    yield return new WaitForSeconds(.1f);
+                    yield return $"sendtochat Command that caused strike was \"{command}\"";
+                    yield break;
+                }
+
+				yield return new WaitForSeconds(.1f);
+            }
+        }
+
 		yield return null;
+	}
 
-		if (commands.Length != 2)
+	private int ManhattenDistance(string command1, string command2) 
+	{
+		return Math.Abs(int.Parse("" + command1[0]) - int.Parse("" + command2[0])) + Math.Abs(int.Parse("" + command2[0]) - int.Parse("" + command2[2]));
+    }
+	private string ValidCommands(string[] commands) 
+	{
+		foreach (string s in commands) 
 		{
-			yield return "sendtochaterror Invalid amount of commands.";
-			yield break;
-		}
+			string[] command = s.Trim().Split(' ');
 
-		foreach (string s in commands)
-        {
-			int num;
+			Debug.Log(command.Join(" "));
 
-			bool b = int.TryParse(s, out num);
-
-			if (!b)
+            if (command.Length != 2)
             {
-				yield return "sendtochaterror Commands contains characters that are not numbers.";
-				yield break;
-			}
-		}
-		int row = int.Parse(commands[0]);
-		int col = int.Parse(commands[1]);
+                return $"sendtochaterror Invalid amount of numbers given for coordinate (Given \"{commands}\").";
+            }
 
-		if (row < 1 || row > 10)
-        {
-			yield return "sendtochaterror Row needs to be bewtween 1 and 10 inclusively.";
-			yield break;
-		}
+            foreach (string n in command)
+            {
+                int num;
 
-		if (col < 0 || col > 9)
-		{
-			yield return "sendtochaterror Column needs to be bewtween 0 and 9 inclusively.";
-			yield break;
-		}
+                if (!int.TryParse(n, out num))
+                {
+                    return $"sendtochaterror Commands contains characters that are not numbers (Given \"{commands}\").";
+                }
+            }
 
-		Cell c = FindCellToPress(row, col);
+            int row = int.Parse(command[0]);
+            int col = int.Parse(command[1]);
 
-		if (c == null)
-        {
-			yield return "sendtochaterror Could not process command. Please contact developer";
-			yield break;
-		}
+            if (row < 1 || row > 10)
+            {
+                return $"sendtochaterror Row needs to be bewtween 1 and 10 inclusively (Given \"{commands}\").";
+            }
 
-		else
-        {
-			KeypadPress(c.Button);
-		}
+            if (col < 1 || col > 10)
+            {
+                return $"sendtochaterror Column needs to be bewtween 1 and 10 inclusively (Given \"{commands}\").";
+            }
+
+            if (FindCellToPress(row, col) == null)
+            {
+                return $"sendtochaterror Could not process command. Please contact developer. (Given \"{commands}\")";
+            }
+        }
+
+		return "";
 	}
 
 	Cell FindCellToPress(int row, int col)
@@ -1049,13 +1086,7 @@ public class Main : MonoBehaviour
 
 			//Debug.Log("Current cell is " + currentCell.ToString());
 
-			List<Cell> neighbors = new List<Cell>();
-
-			neighbors.Add(currentCell.Up);
-			neighbors.Add(currentCell.Left);
-			neighbors.Add(currentCell.Down);
-			neighbors.Add(currentCell.Right);
-
+			List<Cell> neighbors = new List<Cell>() { currentCell.Up, currentCell.Down, currentCell.Left, currentCell.Right };
 
 			//Debug.Log("BEFORE neighbors are " + string.Join(" ", neighbors.Select(x => x == null ? "poop" : x.ToString()).ToArray()));
 
