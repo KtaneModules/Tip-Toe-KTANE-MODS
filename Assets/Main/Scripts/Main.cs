@@ -381,7 +381,6 @@ public class Main : MonoBehaviour
 		if (list.Distinct().Count() == list.Count)
 		{
 			list.RemoveAt(5);
-			Debug.Log("There are 6 distince numbers");
 		}
 		else
         {
@@ -826,7 +825,7 @@ public class Main : MonoBehaviour
 	}
 
 #pragma warning disable 414
-	private readonly string TwitchHelpMessage = @"Use `!{0} row col` to press the button at that location. Tiles can be chained via commas. EX: `1 1, 1 2` ";
+	private readonly string TwitchHelpMessage = @"Use `!{0} row col` to press the button at that location. BL square is considered `1 1` while TR square is considered `10 0`. Tiles can be chained via commas. EX: `1 1, 1 2`";
 #pragma warning restore 414
 
 	IEnumerator ProcessTwitchCommand(string Command)
@@ -834,8 +833,6 @@ public class Main : MonoBehaviour
         string[] commands = Command.Trim().Split(',');
 		commands = commands.Select(x => x.Trim()).ToArray();
 		
-		Debug.Log("Commands: " + commands.Join(", "));
-
 		string message = ValidCommands(commands);
 
 		if (message != "")
@@ -847,13 +844,13 @@ public class Main : MonoBehaviour
         {
 			for (int i = 0; i < commands.Length; i++)
 			{
-				string command = commands[i];
-				string previousCommand = i == 0 ? null : commands[i - 1];
+				string[] command = commands[i].Trim().Split(' ');
+                string[] previousCommand = i == 0 ? null : commands[i - 1].Trim().Split(' ');
 
-                Cell c = FindCellToPress(int.Parse("" + command[0]), int.Parse("" + command[2]));
+                Cell c = FindCellToPress(int.Parse("" + command[0]), int.Parse("" + command[1]));
                 KeypadPress(c.Button);
 
-				if (!c.Safe)
+                if (!c.Safe)
 				{
                     if ((previousCommand == null || ManhattenDistance(command, previousCommand) == 1))
                     {
@@ -861,7 +858,7 @@ public class Main : MonoBehaviour
                     }
 
                     yield return new WaitForSeconds(.1f);
-                    yield return $"sendtochat Command that caused strike was \"{command}\"";
+                    yield return $"sendtochat Command that caused strike was \"{string.Join(" ", command)}\"";
                     yield break;
                 }
 
@@ -872,17 +869,15 @@ public class Main : MonoBehaviour
 		yield return null;
 	}
 
-	private int ManhattenDistance(string command1, string command2) 
+	private int ManhattenDistance(string[] command1, string[] command2) 
 	{
-		return Math.Abs(int.Parse("" + command1[0]) - int.Parse("" + command2[0])) + Math.Abs(int.Parse("" + command2[0]) - int.Parse("" + command2[2]));
+		return Math.Abs(int.Parse("" + command1[0]) - int.Parse("" + command2[0])) + Math.Abs(int.Parse("" + command1[1]) - int.Parse("" + command2[1]));
     }
 	private string ValidCommands(string[] commands) 
 	{
 		foreach (string s in commands) 
 		{
 			string[] command = s.Trim().Split(' ');
-
-			Debug.Log(command.Join(" "));
 
             if (command.Length != 2)
             {
@@ -907,9 +902,9 @@ public class Main : MonoBehaviour
                 return $"sendtochaterror Row needs to be bewtween 1 and 10 inclusively (Given \"{commands}\").";
             }
 
-            if (col < 1 || col > 10)
+            if (col < 0 || col > 9)
             {
-                return $"sendtochaterror Column needs to be bewtween 1 and 10 inclusively (Given \"{commands}\").";
+                return $"sendtochaterror Column needs to be bewtween 0 and 9 inclusively (Given \"{commands}\").";
             }
 
             if (FindCellToPress(row, col) == null)
@@ -918,7 +913,7 @@ public class Main : MonoBehaviour
             }
         }
 
-		return "";
+        return "";
 	}
 
 	Cell FindCellToPress(int row, int col)
@@ -926,6 +921,8 @@ public class Main : MonoBehaviour
 		foreach (Cell c in Grid)
         {
 			string[] s = c.ToString().Replace("(","").Replace(")", "").Split(',');
+
+			Debug.Log(string.Join(" ", s));
 
 			s[0] = s[0].Trim();
 			s[1] = s[1].Trim();
@@ -972,11 +969,6 @@ public class Main : MonoBehaviour
 
 		Cell start1;
 		Cell end1 = null;
-
-		
-
-		//path = FindPath(Grid[9, 1], Grid[4, 6]);
-
 
 		for (int i = 0; i < startingCells.Count; i++)
         {
@@ -1061,8 +1053,6 @@ public class Main : MonoBehaviour
 
 		SetHeristic(end);
 
-		
-
 		List<Cell> open = new List<Cell>();
 		List<Cell> closed = new List<Cell>();
 
@@ -1082,15 +1072,9 @@ public class Main : MonoBehaviour
 				break;
             }
 
-			//Debug.Log("Current cell is " + currentCell.ToString());
-
 			List<Cell> neighbors = new List<Cell>() { currentCell.Up, currentCell.Down, currentCell.Left, currentCell.Right };
 
-			//Debug.Log("BEFORE neighbors are " + string.Join(" ", neighbors.Select(x => x == null ? "poop" : x.ToString()).ToArray()));
-
 			neighbors = GetRidOfBadNeighbors(neighbors, closed);
-
-			//Debug.Log("neighbors are " + string.Join(" ", neighbors.Select(x => ($"{x.ToString()} F={x.FinalCost}")).ToArray()));
 
 			foreach (Cell c in neighbors)
             {
@@ -1131,8 +1115,6 @@ public class Main : MonoBehaviour
         {
 			return null;
         }
-
-		
 
 		List<Cell> path = new List<Cell>();
 
