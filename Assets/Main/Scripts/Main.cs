@@ -881,7 +881,7 @@ public class Main : MonoBehaviour
 
             if (command.Length != 2)
             {
-                return $"sendtochaterror Invalid amount of numbers given for coordinate (Given \"{commands}\").";
+                return $"sendtochaterror Invalid amount of numbers given for coordinate (Given \"{s}\").";
             }
 
             foreach (string n in command)
@@ -890,7 +890,7 @@ public class Main : MonoBehaviour
 
                 if (!int.TryParse(n, out num))
                 {
-                    return $"sendtochaterror Commands contains characters that are not numbers (Given \"{commands}\").";
+                    return $"sendtochaterror Commands contains characters that are not numbers (Given \"{s}\").";
                 }
             }
 
@@ -899,17 +899,17 @@ public class Main : MonoBehaviour
 
             if (row < 1 || row > 10)
             {
-                return $"sendtochaterror Row needs to be bewtween 1 and 10 inclusively (Given \"{commands}\").";
+                return $"sendtochaterror Row needs to be bewtween 1 and 10 inclusively (Given \"{s}\").";
             }
 
             if (col < 0 || col > 9)
             {
-                return $"sendtochaterror Column needs to be bewtween 0 and 9 inclusively (Given \"{commands}\").";
+                return $"sendtochaterror Column needs to be bewtween 0 and 9 inclusively (Given \"{s}\").";
             }
 
             if (FindCellToPress(row, col) == null)
             {
-                return $"sendtochaterror Could not process command. Please contact developer. (Given \"{commands}\")";
+                return $"sendtochaterror Could not process command. Please contact developer. (Given \"{s}\")";
             }
         }
 
@@ -921,9 +921,6 @@ public class Main : MonoBehaviour
 		foreach (Cell c in Grid)
         {
 			string[] s = c.ToString().Replace("(","").Replace(")", "").Split(',');
-
-			Debug.Log(string.Join(" ", s));
-
 			s[0] = s[0].Trim();
 			s[1] = s[1].Trim();
 
