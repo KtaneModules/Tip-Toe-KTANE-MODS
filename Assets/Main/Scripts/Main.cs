@@ -830,6 +830,7 @@ public class Main : MonoBehaviour
 
 	IEnumerator ProcessTwitchCommand(string Command)
 	{
+
         string[] commands = Command.Trim().Split(',');
 		commands = commands.Select(x => x.Trim()).ToArray();
 		
@@ -842,7 +843,9 @@ public class Main : MonoBehaviour
         }
         else
         {
-			for (int i = 0; i < commands.Length; i++)
+            yield return null;
+
+            for (int i = 0; i < commands.Length; i++)
 			{
 				string[] command = commands[i].Trim().Split(' ');
                 string[] previousCommand = i == 0 ? null : commands[i - 1].Trim().Split(' ');
@@ -865,8 +868,6 @@ public class Main : MonoBehaviour
 				yield return new WaitForSeconds(.1f);
             }
         }
-
-		yield return null;
 	}
 
 	private int ManhattenDistance(string[] command1, string[] command2) 
