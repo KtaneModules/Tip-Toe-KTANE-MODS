@@ -199,9 +199,6 @@ public class Main : MonoBehaviour
 
 		Cell cell = flickeringCells[0];
 
-		//Debug.Log($"Flickering at {cell.Row},{cell.Col}");
-		//Debug.Log($"Times at {string.Join(" ", cell.FlickerTimes.Select(x => "" + x).ToArray())}");
-
 		falling = false;
 	}
 
@@ -222,14 +219,6 @@ public class Main : MonoBehaviour
 		}
 
 		Logging(log);
-
-		/*
-		if (before)
-        {
-			string g2 = "FFFFFFFFFF\nFFFFFFFFFF\nTTTTTTTTTT\nFFFFFFFFFF\nTFTFFTFFFF\nTFTFFTTTTF\nTTTTTTTTTT\nTFTFFTFTFT\nTTTTTTTTTT\nFFTTFFFFFT";
-			SameGrid(g1, g2);
-		}*/
-
 	}
 
 
@@ -938,105 +927,76 @@ public class Main : MonoBehaviour
 	{
 		yield return null;
 
-		Dictionary<Cell, List<Cell>> d = new Dictionary<Cell, List<Cell>>();
 
-		List <Cell> startingCells = new List<Cell>();
-		List<Cell> ending1Cells = new List<Cell>();
-		List<Cell> ending2Cells = new List<Cell>();
+		List <Cell> row1ValidCells = new List<Cell>();
+		List<Cell> row6ValidCells = new List<Cell>();
+		List<Cell> row10ValidCells = new List<Cell>();
+
+
 
 		for (int i = 0; i < 10; i++)
         {
 			if (Grid[9, i].Safe)
             {
-				startingCells.Add(Grid[9, i]);
+				row1ValidCells.Add(Grid[9, i]);
 			}
 
 			if (Grid[4, i].Safe)
             {
-				ending1Cells.Add(Grid[4, i]);
+				row6ValidCells.Add(Grid[4, i]);
             }
 
 			if (Grid[0, i].Safe)
             {
-				ending2Cells.Add(Grid[0, i]);
+				row10ValidCells.Add(Grid[0, i]);
 			}
 		}
 
-		List<Cell> path1 = null;
-		List<Cell> path2 = null;
+        //find your way to row 6
+        if (currentPos.Row == -1 || !row6CellSafe)
+		{
+			List<Cell> row6Path;
 
-		Cell start1;
-		Cell end1 = null;
-
-		for (int i = 0; i < startingCells.Count; i++)
-        {
-			for (int j = 0; j < ending1Cells.Count; j++)
+            if (currentPos.Row == -1)
 			{
-				start1 = startingCells[i];
-				end1 = ending1Cells[i];
-				
-				path1 = FindPath(start1, end1);
-
-				if (path1 != null)
-                {
-					break;
-                }
+				row6Path = GetToRow(row1ValidCells, row6ValidCells);
 			}
 
-			if (path1 != null)
+			else
 			{
-				break;
-			}
-		}
-
-		if (path1 != null)
-        {
-			Debug.Log(path1.Count);
-			Debug.Log(string.Join(" ", path1.Select(x => x.ToString()).ToArray()));
-
-			foreach (Cell c in path1)
-            {
-				KeypadPress(c.Button);
-				yield return new WaitForSeconds(.1f); //here to make sure row 6 and 7 safe spaces update
-			}
-		}
-		else
-        {
-			yield return "sendtochaterror An error occured. Please contact developer with log.";
-			yield break;
-        }
-
-		
-		Cell end2;
-
-		for (int i = 0; i < ending2Cells.Count; i++)
-        {
-			end2 = ending2Cells[i];
-
-			path2 = FindPath(end1, end2);
-
-			if (path2 != null)
-			{
-				break;
+                row6Path = GetToRow(currentPos, row6ValidCells);
             }
-        }
 
-        if (path2 != null)
-        {
-			path2.RemoveAt(0); //gets rid of space already on
-			Debug.Log(path2.Count);
-			Debug.Log(string.Join(" ", path2.Select(x => x.ToString()).ToArray()));
-			foreach (Cell c in path2)
+			if (row6Path == null)
+			{
+                yield return "sendtochaterror An error occured. Please contact developer with log.";
+                yield break;
+            }
+
+			foreach (Cell c in row6Path)
 			{
 				KeypadPress(c.Button);
-				yield return new WaitForSeconds(.1f); //consistancy
-			}
-		}
-		else
-        {
-			yield return "sendtochaterror An error occured. Please contact developer with log.";
-			yield break;
-		}
+                yield return new WaitForSeconds(.1f);
+            }
+
+        }
+
+		//go straight to the exit
+		List<Cell> endPath = GetToRow(currentPos, row10ValidCells);
+
+		if (endPath == null)
+		{
+            yield return "sendtochaterror An error occured. Please contact developer with log.";
+            yield break;
+        }
+
+		endPath.RemoveAt(0);
+
+		foreach (Cell c in endPath)
+		{
+            KeypadPress(c.Button);
+            yield return new WaitForSeconds(.1f);
+        }
 
 		while(!ModuleSolved)
         {
@@ -1044,11 +1004,43 @@ public class Main : MonoBehaviour
         }
     }
 
+    List<Cell> GetToRow(List<Cell> multipleStarts, List<Cell> validRowCells)
+    {
+        List<Cell> list = null;
+
+		foreach (Cell start in multipleStarts)
+		{
+			list = GetToRow(start, validRowCells);
+
+			if (list != null)
+			{
+				break;
+			}
+        }
+
+        return list;
+    }
+
+    List<Cell> GetToRow(Cell start, List<Cell> validRowCells)
+	{
+		List<Cell> list = null;
+
+        foreach (Cell end in validRowCells)
+		{
+			list = FindPath(start, end);
+
+			if (list != null)
+			{
+				break;
+			}
+        }
+
+
+		return list;
+	}
+
     List<Cell> FindPath(Cell start, Cell end)
     {
-		Debug.Log($"Start at " + start.ToString());
-		Debug.Log($"End at " + end.ToString());
-
 		SetHeristic(end);
 
 		List<Cell> open = new List<Cell>();
@@ -1105,7 +1097,6 @@ public class Main : MonoBehaviour
             }
 			open = open.OrderBy(x => x.FinalCost).ToList();
 			currentCell = open.First();
-			//Debug.Log("Cells in open list " + string.Join(" ", open.Select(x => ($"{x.ToString()} F={x.FinalCost}")).ToArray()));
 			neighbors.Clear();
 		}
 	
